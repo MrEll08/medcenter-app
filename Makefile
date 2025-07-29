@@ -1,7 +1,7 @@
 include .env
 export
 
-env:  ##@Environment Create .env file with variables
+env:
 	@$(eval SHELL:=/bin/bash)
 	@cp .env.sample .env
 	@echo "SECRET_KEY=$$(openssl rand -hex 32)" >> .env
@@ -14,3 +14,19 @@ stop-db:
 
 psql:
 	docker compose exec db psql -U ${POSTGRES_USER} -d ${POSTGRES_DB}
+
+ALEMBIC = poetry run alembic -c app/db/alembic.ini
+
+MSG ?=
+REV ?=head
+
+migrate:
+	$(ALEMBIC) revision --autogenerate -m "$(MSG)"
+
+upgrade:
+	$(ALEMBIC) upgrade $(REV)
+
+downgrade:
+	$(ALEMBIC) downgrade $(or $(REV), -1)
+
+.PHONY: migrate upgrade downgrade

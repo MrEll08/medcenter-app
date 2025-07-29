@@ -1,8 +1,9 @@
 import secrets
 from os import environ
+from typing import ClassVar
 
 from fastapi.security import OAuth2PasswordBearer
-from pydantic import BaseSettings
+from pydantic_settings import BaseSettings
 
 
 class DefaultSettings(BaseSettings):
@@ -30,7 +31,7 @@ class DefaultSettings(BaseSettings):
     SECRET_KEY: str = environ.get("SECRET_KEY", secrets.token_hex(32))
     ACCESS_TOKEN_EXPIRE_MINUTES: int = int(environ.get("ACCESS_TOKEN_EXPIRE_MINUTES", 1440))
 
-    OAUTH2_SCHEME = OAuth2PasswordBearer(tokenUrl=f"{APP_HOST}:{APP_PORT}{PATH_PREFIX}/user/authentication")
+    OAUTH2_SCHEME: ClassVar[OAuth2PasswordBearer] = OAuth2PasswordBearer(tokenUrl=f"{APP_HOST}:{APP_PORT}{PATH_PREFIX}/user/authentication")
 
     @property
     def database_settings(self) -> dict:

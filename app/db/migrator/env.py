@@ -2,11 +2,14 @@ from logging.config import fileConfig
 
 from sqlalchemy import engine_from_config, pool
 from alembic import context
+from sqlalchemy.ext.asyncio import create_async_engine
 from dotenv import load_dotenv
 
 from app.config import get_settings
 from app.db import DeclarativeBase
 from app.db.models import *  # noqa
+
+import asyncio
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -14,6 +17,7 @@ load_dotenv()
 config = context.config
 section = config.config_ini_section
 settings = get_settings()
+DATABASE_URL = settings.database_uri
 config.set_section_option(section, "POSTGRES_DB", settings.POSTGRES_DB)
 config.set_section_option(section, "POSTGRES_HOST", settings.POSTGRES_HOST)
 config.set_section_option(section, "POSTGRES_USER", settings.POSTGRES_USER)
@@ -61,26 +65,24 @@ def run_migrations_offline() -> None:
         context.run_migrations()
 
 
-def run_migrations_online() -> None:
-    """Run migrations in 'online' mode.
+def run_migrations_online():
+    """Online migrations using asyncpg."""
+    connectable = create_async_engine(DATABASE_URL, future=True)
 
-    In this scenario we need to create an Engine
-    and associate a connection with the context.
+    async def run_async_migrations():
+        async with connectable.begin() as conn:
+            await conn.run_sync(do_run_migrations)
 
-    """
-    connectable = engine_from_config(
-        config.get_section(config.config_ini_section, {}),
-        prefix="sqlalchemy.",
-        poolclass=pool.NullPool,
-    )
-
-    with connectable.connect() as connection:
+    def do_run_migrations(connection):
         context.configure(
-            connection=connection, target_metadata=target_metadata
+            connection=connection,
+            target_metadata=target_metadata,
+            compare_type=True,
         )
-
         with context.begin_transaction():
             context.run_migrations()
+
+    asyncio.run(run_async_migrations())
 
 
 if context.is_offline_mode():

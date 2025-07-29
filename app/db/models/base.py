@@ -8,7 +8,7 @@ import uuid
 from app.db import DeclarativeBase
 
 
-class BaseTable(DeclarativeBase):
+class Base(DeclarativeBase):
     __abstract__ = True
 
     id: Mapped[uuid.UUID] = mapped_column(
