@@ -1,10 +1,15 @@
 include .env
 export
 
+APPLICATION_NAME = app
+
 env:
 	@$(eval SHELL:=/bin/bash)
 	@cp .env.sample .env
 	@echo "SECRET_KEY=$$(openssl rand -hex 32)" >> .env
+
+run:
+	poetry run python3 -m $(APPLICATION_NAME)
 
 start-db:
 	docker compose up db -d
@@ -38,4 +43,4 @@ format:
 format-unsafe:
 	poetry run ruff check . --fix --unsafe-fixes
 
-.PHONY: env start-db stop-db psql migrate upgrade downgrade lint format format-unsafe
+.PHONY: env run start-db stop-db psql migrate upgrade downgrade lint format format-unsafe

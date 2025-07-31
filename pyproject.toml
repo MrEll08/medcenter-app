@@ -30,6 +30,8 @@ dotenv = "^0.9.9"
 pydantic-settings = "^2.10.1"
 asyncpg = "^0.30.0"
 greenlet = "^3.2.3"
+uvicorn = "^0.35.0"
+fastapi-pagination = "^0.13.3"
 
 
 [tool.poetry.group.dev.dependencies]
