@@ -1,9 +1,9 @@
+import uuid
 from datetime import datetime
 
+from sqlalchemy.dialects.postgresql import TIMESTAMP, UUID
 from sqlalchemy.orm import Mapped, mapped_column
-from sqlalchemy.dialects.postgresql import UUID, TIMESTAMP
 from sqlalchemy.sql import func
-import uuid
 
 from app.db import DeclarativeBase
 

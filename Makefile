@@ -29,4 +29,13 @@ upgrade:
 downgrade:
 	$(ALEMBIC) downgrade $(or $(REV), -1)
 
-.PHONY: migrate upgrade downgrade
+lint:
+	poetry run ruff check .
+
+format:
+	poetry run ruff check . --fix
+
+format-unsafe:
+	poetry run ruff check . --fix --unsafe-fixes
+
+.PHONY: env start-db stop-db psql migrate upgrade downgrade lint format format-unsafe

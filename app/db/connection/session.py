@@ -15,7 +15,7 @@ class SessionManager:
 
     def __new__(cls):
         if not hasattr(cls, "instance"):
-            cls.instance = super(SessionManager, cls).__new__(cls)
+            cls.instance = super().__new__(cls)
         return cls.instance  # noqa
 
     def get_session_maker(self) -> sessionmaker:

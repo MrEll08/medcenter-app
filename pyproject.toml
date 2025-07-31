@@ -6,6 +6,21 @@ authors = ["Max Gavrilov <maxim.gavrilov.2008@gmail.com>"]
 license = "MIT"
 readme = "README.md"
 
+[tool.ruff]
+line-length = 100
+exclude = ["app/db/migrator/versions", ".venv"]
+target-version = "py312"
+src = ["app"]
+fix = true
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+ignore = ["E203", "E501"]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401"]
+
+
 [tool.poetry.dependencies]
 python = "^3.12"
 fastapi = "^0.116.1"
@@ -16,6 +31,9 @@ pydantic-settings = "^2.10.1"
 asyncpg = "^0.30.0"
 greenlet = "^3.2.3"
 
+
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.12.7"
 
 [build-system]
 requires = ["poetry-core"]

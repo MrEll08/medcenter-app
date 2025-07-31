@@ -1,7 +1,7 @@
-from datetime import datetime
 
+from sqlalchemy.dialects.postgresql import TEXT
 from sqlalchemy.orm import Mapped, mapped_column
-from sqlalchemy.dialects.postgresql import TEXT, DATE
+
 from .base import Base
 
 
