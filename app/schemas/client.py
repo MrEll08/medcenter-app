@@ -1,24 +1,7 @@
 import uuid
 from datetime import date, datetime
 
-from pydantic import BaseModel, Field, model_validator
-
-
-class ClientResponse(BaseModel):
-    id: uuid.UUID
-
-    name: str
-    surname: str
-    patronymic: str
-
-    phone_number: str
-    date_of_birth: date
-
-    dt_created: datetime
-    dt_updated: datetime
-
-    class Config:
-        orm_mode = True
+from pydantic import BaseModel, ConfigDict, model_validator
 
 
 class ClientRequest(BaseModel):
@@ -44,5 +27,18 @@ class ClientRequest(BaseModel):
 
         return self
 
-    class Config:
-        orm_mode = True
+
+class ClientResponse(BaseModel):
+    id: uuid.UUID
+
+    name: str
+    surname: str
+    patronymic: str | None
+
+    phone_number: str
+    date_of_birth: date
+
+    dt_created: datetime
+    dt_updated: datetime
+
+    model_config = ConfigDict(from_attributes=True)
