@@ -11,3 +11,5 @@ class Human(Base):
     name: Mapped[str] = mapped_column(TEXT, nullable=False)
     surname: Mapped[str] = mapped_column(TEXT, nullable=False)
     patronymic: Mapped[str] = mapped_column(TEXT, nullable=True)
+
+    full_name: Mapped[str] = mapped_column(TEXT, nullable=False)

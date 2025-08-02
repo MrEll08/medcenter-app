@@ -11,7 +11,7 @@ class ClientRequest(BaseModel):
 
     name: str = ""
     surname: str = ""
-    patronymic: str | None = None
+    patronymic: str | None = ""
 
     @model_validator(mode="after")
     def split_full_name(self) -> "ClientRequest":

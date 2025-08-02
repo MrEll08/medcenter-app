@@ -1,6 +1,6 @@
 import uuid
 
-from fastapi import APIRouter, Body, Depends, Request, HTTPException
+from fastapi import APIRouter, Body, Depends, Query, Request, HTTPException
 from starlette import status
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.status import HTTP_404_NOT_FOUND
@@ -8,6 +8,7 @@ from starlette.status import HTTP_404_NOT_FOUND
 from app.db.connection import get_session
 from app.schemas import ClientRequest, ClientResponse
 from app.utils.client import create_client, get_client_by_id
+from app.utils.client.database import find_client_by_substr
 
 router = APIRouter(prefix="/client", tags=["client"])
 
@@ -54,3 +55,20 @@ async def get_client(
     if not client:
         raise HTTPException(status_code=HTTP_404_NOT_FOUND, detail="Client with this id not found")
     return ClientResponse.model_validate(client)
+
+
+@router.get(
+    "/",
+    response_model=list[ClientResponse],
+    status_code=status.HTTP_200_OK
+)
+async def find_clients(
+    _: Request,
+    session: AsyncSession = Depends(get_session),
+    search_substr: str = Query(default="", title="Search substr"),
+) -> list[ClientResponse]:
+    clients_model = await find_client_by_substr(session, search_substr)
+    clients_response = [
+        ClientResponse.model_validate(client) for client in clients_model
+    ]
+    return clients_response
