@@ -15,7 +15,8 @@ class DefaultSettings(BaseSettings):
     """
 
     ENV: str = environ.get("ENV", "local")
-    PATH_PREFIX: str = environ.get("PATH_PREFIX", "/api/v1")
+    PATH_PREFIX_API: str = environ.get("PATH_PREFIX_API", "/api/v1")
+    PATH_PREFIX_FRONTEND: str = environ.get("PATH_PREFIX_FRONTEND", "/")
     APP_HOST: str = environ.get("APP_HOST", "http://127.0.0.1")
     APP_PORT: int = int(environ.get("APP_PORT", 8000))
 
@@ -31,7 +32,7 @@ class DefaultSettings(BaseSettings):
     SECRET_KEY: str = environ.get("SECRET_KEY", secrets.token_hex(32))
     ACCESS_TOKEN_EXPIRE_MINUTES: int = int(environ.get("ACCESS_TOKEN_EXPIRE_MINUTES", 1440))
 
-    OAUTH2_SCHEME: ClassVar[OAuth2PasswordBearer] = OAuth2PasswordBearer(tokenUrl=f"{APP_HOST}:{APP_PORT}{PATH_PREFIX}/user/authentication")
+    OAUTH2_SCHEME: ClassVar[OAuth2PasswordBearer] = OAuth2PasswordBearer(tokenUrl=f"{APP_HOST}:{APP_PORT}{PATH_PREFIX_API}/user/authentication")
 
     @property
     def database_settings(self) -> dict:

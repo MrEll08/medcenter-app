@@ -1,14 +1,15 @@
 import uuid
 from datetime import date, time
 
-from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy import ForeignKey, text
-from sqlalchemy.dialects.postgresql import DATE, TEXT, TIME, ENUM, UUID, FLOAT
+from sqlalchemy.dialects.postgresql import DATE, ENUM, FLOAT, TEXT, TIME, UUID
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from app.db.enums import VisitStatus
 
 from .base import Base
-from .doctor import Doctor
 from .client import Client
-from app.db.enums import VisitStatus
+from .doctor import Doctor
 
 
 class Visit(Base):

@@ -1,4 +1,5 @@
 from os import environ
+
 from app.config.default import DefaultSettings
 
 
