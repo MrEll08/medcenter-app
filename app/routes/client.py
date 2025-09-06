@@ -7,8 +7,7 @@ from starlette.status import HTTP_404_NOT_FOUND
 
 from app.db.connection import get_session
 from app.schemas import ClientRequest, ClientResponse
-from app.utils.client import create_client, get_client_by_id
-from app.utils.client.database import find_client_by_substr
+from app.utils.client import create_client, get_client_by_id, find_client_by_substr
 
 router = APIRouter(prefix="/clients", tags=["client"])
 
