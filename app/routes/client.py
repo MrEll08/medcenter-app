@@ -10,7 +10,7 @@ from app.schemas import ClientRequest, ClientResponse
 from app.utils.client import create_client, get_client_by_id
 from app.utils.client.database import find_client_by_substr
 
-router = APIRouter(prefix="/client", tags=["client"])
+router = APIRouter(prefix="/clients", tags=["client"])
 
 
 @router.post(
