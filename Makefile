@@ -17,6 +17,10 @@ start-db:
 stop-db:
 	docker compose down
 
+clean-restart-db:
+	docker-compose down -v
+	docker-compose up -d
+
 psql:
 	docker compose exec db psql -U ${POSTGRES_USER} -d ${POSTGRES_DB}
 
