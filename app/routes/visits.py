@@ -6,10 +6,24 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from starlette import status
 
 from app.db.connection import get_session
-from app.schemas.visit import VisitResponse, VisitCreateRequest
+from app.schemas.visit import VisitResponse, VisitCreateRequest, VisitSearchRequest
 from app.utils.visit import create_visit, delete_visit, get_visit_by_id
+from app.utils.visit.database import get_visits_by_filter
 
 router = APIRouter(prefix="/visits", tags=["visits"])
+
+
+@router.get(
+    "/",
+    status_code=status.HTTP_200_OK,
+    response_model=list[VisitResponse],
+)
+async def get_visits(
+        search: VisitSearchRequest = Depends(),
+        session: AsyncSession = Depends(get_session),
+):
+    visits = await get_visits_by_filter(session, search)
+    return visits
 
 
 @router.post(
