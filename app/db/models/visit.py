@@ -1,11 +1,11 @@
 import uuid
-from datetime import date, time
+from datetime import datetime
 
 from sqlalchemy import ForeignKey, text
-from sqlalchemy.dialects.postgresql import DATE, ENUM, FLOAT, TEXT, TIME, UUID
+from sqlalchemy.dialects.postgresql import ENUM, FLOAT, TEXT, TIMESTAMP, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.db.enums import VisitStatus
+from app.db.enums import VisitStatusEnum
 
 from .base import Base
 from .client import Client
@@ -26,19 +26,16 @@ class Visit(Base):
         nullable=False,
     )
 
-    date: Mapped[date] = mapped_column(
-        DATE,
+    start_date: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True),
         nullable=False,
-        server_default=text("CURRENT_DATE"),
+        server_default=text("CURRENT_TIMESTAMP"),
     )
-    start_time: Mapped[time] = mapped_column(
-        TIME,
+
+    end_date: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True),
         nullable=False,
-        server_default=text("CURRENT_TIME"),
-    )
-    end_time: Mapped[time] = mapped_column(
-        TIME,
-        nullable=False,
+        server_default=text("CURRENT_TIMESTAMP + interval '1 hour'"),
     )
 
     procedure: Mapped[str] = mapped_column(
@@ -50,12 +47,24 @@ class Visit(Base):
         nullable=True,
     )
 
-    status: Mapped[VisitStatus] = mapped_column(
-        ENUM(VisitStatus, name="visit_status", create_type=True),
+    status: Mapped[VisitStatusEnum] = mapped_column(
+        ENUM(VisitStatusEnum, name="visit_status", create_type=True),
         nullable=False,
-        default=VisitStatus.UNCONFIRMED,
+        default=VisitStatusEnum.UNCONFIRMED,
         server_default=text("'UNCONFIRMED'::visit_status"),
     )
 
-    client: Mapped[Client] = relationship("Client", back_populates="visits")
-    doctor: Mapped[Doctor] = relationship("Doctor", back_populates="visits")
+    client: Mapped[Client] = relationship(
+        "Client", back_populates="visits", lazy="selectin"
+    )
+    doctor: Mapped[Doctor] = relationship(
+        "Doctor", back_populates="visits", lazy="selectin"
+    )
+
+    @property
+    def client_name(self) -> str | None:
+        return self.client.full_name if self.client else None
+
+    @property
+    def doctor_name(self) -> str | None:
+        return self.doctor.full_name if self.doctor else None
