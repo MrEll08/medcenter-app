@@ -1,6 +1,6 @@
-from .client import ClientResponse, ClientRequest
+from .client import ClientCreateRequest, ClientResponse
 
 __all__ = [
+    "ClientCreateRequest",
     "ClientResponse",
-    "ClientRequest",
 ]
