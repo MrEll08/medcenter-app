@@ -1,7 +1,8 @@
-from .database import create_visit, get_visit_by_id, delete_visit
+from .database import create_visit, get_visit_by_id, delete_visit, get_visits_by_filter
 
 __all__ = [
     "create_visit",
     "get_visit_by_id",
     "delete_visit",
+    "get_visits_by_filter"
 ]

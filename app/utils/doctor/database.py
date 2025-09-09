@@ -19,7 +19,7 @@ async def create_doctor(
     return doctor
 
 
-async def get_doctor(
+async def get_doctor_by_id(
         session: AsyncSession,
         doctor_id: uuid.UUID,
 ) -> Doctor | None:

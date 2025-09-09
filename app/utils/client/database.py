@@ -8,8 +8,8 @@ from app.schemas import ClientCreateRequest
 
 
 async def create_client(
-    session: AsyncSession,
-    potential_client: ClientCreateRequest
+        session: AsyncSession,
+        potential_client: ClientCreateRequest
 ) -> tuple[Client | None, str]:
     client = Client(**potential_client.model_dump())
     session.add(client)
@@ -24,8 +24,8 @@ async def create_client(
 
 
 async def get_client_by_id(
-    session: AsyncSession,
-    client_id: uuid.UUID,
+        session: AsyncSession,
+        client_id: uuid.UUID,
 ) -> Client | None:
     client = await session.scalar(
         select(Client)
@@ -35,8 +35,8 @@ async def get_client_by_id(
 
 
 async def find_client_by_substr(
-    session: AsyncSession,
-    client_substr: str
+        session: AsyncSession,
+        client_substr: str
 ) -> Sequence[Client] | None:
     clients = await session.scalars(
         select(Client)

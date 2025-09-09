@@ -6,8 +6,10 @@ from starlette import status
 from starlette.status import HTTP_404_NOT_FOUND
 
 from app.db.connection import get_session
-from app.schemas import ClientCreateRequest, ClientResponse
+from app.schemas import ClientCreateRequest, ClientResponse, VisitResponse
+from app.schemas.visit import VisitSearchRequest
 from app.utils.client import create_client, find_client_by_substr, get_client_by_id
+from app.utils.visit import get_visits_by_filter
 
 router = APIRouter(prefix="/clients", tags=["client"])
 
@@ -22,9 +24,9 @@ router = APIRouter(prefix="/clients", tags=["client"])
     },
 )
 async def create_new_client(
-    _: Request,
-    potential_client: ClientCreateRequest = Body(...),
-    session: AsyncSession = Depends(get_session),
+        _: Request,
+        potential_client: ClientCreateRequest = Body(...),
+        session: AsyncSession = Depends(get_session),
 ):
     client, message = await create_client(session, potential_client)
 
@@ -46,14 +48,14 @@ async def create_new_client(
     }
 )
 async def get_client(
-    _: Request,
-    client_id: uuid.UUID,
-    session: AsyncSession = Depends(get_session),
+        _: Request,
+        client_id: uuid.UUID,
+        session: AsyncSession = Depends(get_session),
 ):
     client = await get_client_by_id(session, client_id)
     if not client:
         raise HTTPException(status_code=HTTP_404_NOT_FOUND)
-    return ClientResponse.model_validate(client)
+    return client
 
 
 @router.get(
@@ -62,12 +64,24 @@ async def get_client(
     status_code=status.HTTP_200_OK
 )
 async def find_clients(
-    _: Request,
-    session: AsyncSession = Depends(get_session),
-    search_substr: str = Query(default="", title="Search substr"),
-) -> list[ClientResponse]:
-    clients_model = await find_client_by_substr(session, search_substr)
-    clients_response = [
-        ClientResponse.model_validate(client) for client in clients_model
-    ]
-    return clients_response
+        _: Request,
+        session: AsyncSession = Depends(get_session),
+        search_substr: str = Query(default="", title="Search substr"),
+):
+    clients = await find_client_by_substr(session, search_substr)
+    return clients
+
+
+@router.get(
+    "/{client_id}/visits",
+    response_model=list[VisitResponse],
+    status_code=status.HTTP_200_OK,
+)
+async def get_visits(
+        _: Request,
+        client_id: uuid.UUID,
+        session: AsyncSession = Depends(get_session),
+):
+    search = VisitSearchRequest(client_id=client_id)
+    visits = await get_visits_by_filter(session, search)
+    return visits
