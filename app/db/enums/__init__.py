@@ -1,5 +1,5 @@
-from .visit import VisitStatus
+from .visit import VisitStatusEnum
 
 __all__ = [
-    "VisitStatus",
+    "VisitStatusEnum",
 ]

@@ -1,15 +1,15 @@
 import uuid
 
-from sqlalchemy import exc, func, or_, select, Sequence
+from sqlalchemy import Sequence, exc, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.models import Client
-from app.schemas import ClientRequest
+from app.schemas import ClientCreateRequest
 
 
 async def create_client(
     session: AsyncSession,
-    potential_client: ClientRequest
+    potential_client: ClientCreateRequest
 ) -> tuple[Client | None, str]:
     client = Client(**potential_client.model_dump())
     session.add(client)
@@ -31,8 +31,6 @@ async def get_client_by_id(
         select(Client)
         .where(Client.id == client_id)
     )
-    if not client:
-        return None
     return client
 
 

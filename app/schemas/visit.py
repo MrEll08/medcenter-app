@@ -25,3 +25,6 @@ class VisitResponse(BaseResponse):
 
     procedure: str | None
     status: VisitStatusEnum
+
+    client_name: str
+    doctor_name: str
