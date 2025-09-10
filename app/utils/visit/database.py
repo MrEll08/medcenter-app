@@ -53,6 +53,8 @@ async def get_visits_by_filter(
         query = query.where(Visit.start_date >= search_visit.start_date)
     if search_visit.end_date:
         query = query.where(Visit.end_date <= search_visit.end_date)
+    if search_visit.cabinet:
+        query = query.where(Visit.cabinet == search_visit.cabinet)
     if search_visit.procedure:
         query = query.where(Visit.procedure == search_visit.procedure)
     if search_visit.status:

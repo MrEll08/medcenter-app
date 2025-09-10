@@ -38,6 +38,10 @@ class Visit(Base):
         server_default=text("CURRENT_TIMESTAMP + interval '1 hour'"),
     )
 
+    cabinet: Mapped[str] = mapped_column(
+        TEXT,
+        nullable=True,
+    )
     procedure: Mapped[str] = mapped_column(
         TEXT,
         nullable=True,

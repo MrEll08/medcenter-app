@@ -14,6 +14,7 @@ class VisitCreateRequest(BaseCreateRequest):
     start_date: datetime.datetime
     end_date: datetime.datetime | None = None
 
+    cabinet: str | None = None
     procedure: str | None = ""
     cost: float | None = 0
 
@@ -25,6 +26,7 @@ class VisitResponse(BaseResponse):
     start_date: datetime.datetime
     end_date: datetime.datetime
 
+    cabinet: str | None = None
     procedure: str | None = None
     cost: float | None = 0
     status: VisitStatusEnum
@@ -42,5 +44,6 @@ class VisitSearchRequest(BaseModel):
     start_date: datetime.datetime | None = None
     end_date: datetime.datetime | None = None
 
+    cabinet: str | None = None
     procedure: str | None = None
     status: VisitStatusEnum | None = None
