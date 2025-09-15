@@ -1,15 +1,27 @@
 import uuid
 
-from sqlalchemy import exc, func, or_, select, Sequence
+from sqlalchemy import Sequence, exc, func, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.models import Client
-from app.schemas import ClientRequest
+from app.schemas import ClientCreateRequest
+from app.schemas.client import ClientUpdateRequest
 
 
-async def create_client(
-    session: AsyncSession,
-    potential_client: ClientRequest
+async def get_client_by_id(
+        session: AsyncSession,
+        client_id: uuid.UUID,
+) -> Client | None:
+    client = await session.scalar(
+        select(Client)
+        .where(Client.id == client_id)
+    )
+    return client
+
+
+async def create_new_client(
+        session: AsyncSession,
+        potential_client: ClientCreateRequest
 ) -> tuple[Client | None, str]:
     client = Client(**potential_client.model_dump())
     session.add(client)
@@ -23,22 +35,25 @@ async def create_client(
         return None, "User with this phone number already exists"
 
 
-async def get_client_by_id(
-    session: AsyncSession,
-    client_id: uuid.UUID,
+async def update_client(
+        session: AsyncSession,
+        client_id: uuid.UUID,
+        update_request: ClientUpdateRequest,
 ) -> Client | None:
+    values = update_request.model_dump(exclude_none=True)
     client = await session.scalar(
-        select(Client)
+        update(Client)
         .where(Client.id == client_id)
+        .values(**values)
+        .returning(Client)
     )
-    if not client:
-        return None
+    await session.commit()
     return client
 
 
 async def find_client_by_substr(
-    session: AsyncSession,
-    client_substr: str
+        session: AsyncSession,
+        client_substr: str
 ) -> Sequence[Client] | None:
     clients = await session.scalars(
         select(Client)
@@ -52,3 +67,4 @@ async def find_client_by_substr(
         .limit(20)
     )
     return clients.all()
+

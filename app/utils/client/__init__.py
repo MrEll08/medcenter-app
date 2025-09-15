@@ -1,6 +1,8 @@
-from .database import create_client, get_client_by_id
+from .database import create_new_client, find_client_by_substr, get_client_by_id, update_client
 
 __all__ = [
-    "create_client",
-    "get_client_by_id"
+    "get_client_by_id",
+    "create_new_client",
+    "update_client",
+    "find_client_by_substr",
 ]
