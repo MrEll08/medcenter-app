@@ -32,6 +32,23 @@ async def find_doctors(
     return doctors
 
 
+@router.post(
+    "/",
+    status_code=status.HTTP_201_CREATED,
+    response_model=DoctorResponse,
+    responses={
+        status.HTTP_422_UNPROCESSABLE_ENTITY: {"description": "Validation error"},
+    }
+)
+async def create_new_doctor(
+        _: Request,
+        potential_doctor: DoctorCreateRequest = Body(...),
+        session: AsyncSession = Depends(get_session)
+):
+    doctor = await create_doctor(session, potential_doctor)
+    return doctor
+
+
 @router.get(
     "/{doctor_id}",
     status_code=status.HTTP_200_OK,
@@ -53,38 +70,6 @@ async def get_doctor(
     return doctor
 
 
-@router.get(
-    "/{doctor_id}/visits",
-    response_model=list[VisitResponse],
-    status_code=status.HTTP_200_OK,
-)
-async def get_visits(
-        _: Request,
-        doctor_id: uuid.UUID,
-        session: AsyncSession = Depends(get_session),
-):
-    search = VisitSearchRequest(doctor_id=doctor_id)
-    visits = await get_visits_by_filter(session, search)
-    return visits
-
-
-@router.post(
-    "/",
-    status_code=status.HTTP_201_CREATED,
-    response_model=DoctorResponse,
-    responses={
-        status.HTTP_422_UNPROCESSABLE_ENTITY: {"description": "Validation error"},
-    }
-)
-async def create_new_doctor(
-        _: Request,
-        potential_doctor: DoctorCreateRequest = Body(...),
-        session: AsyncSession = Depends(get_session)
-):
-    doctor = await create_doctor(session, potential_doctor)
-    return doctor
-
-
 @router.patch(
     "/{doctor_id}",
     status_code=status.HTTP_200_OK,
@@ -103,3 +88,18 @@ async def patch_doctor(
     if doctor is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
     return doctor
+
+
+@router.get(
+    "/{doctor_id}/visits",
+    response_model=list[VisitResponse],
+    status_code=status.HTTP_200_OK,
+)
+async def get_visits(
+        _: Request,
+        doctor_id: uuid.UUID,
+        session: AsyncSession = Depends(get_session),
+):
+    search = VisitSearchRequest(doctor_id=doctor_id)
+    visits = await get_visits_by_filter(session, search)
+    return visits
