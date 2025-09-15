@@ -8,6 +8,17 @@ from app.schemas import ClientCreateRequest
 from app.schemas.client import ClientUpdateRequest
 
 
+async def get_client_by_id(
+        session: AsyncSession,
+        client_id: uuid.UUID,
+) -> Client | None:
+    client = await session.scalar(
+        select(Client)
+        .where(Client.id == client_id)
+    )
+    return client
+
+
 async def create_client(
         session: AsyncSession,
         potential_client: ClientCreateRequest
@@ -24,14 +35,19 @@ async def create_client(
         return None, "User with this phone number already exists"
 
 
-async def get_client_by_id(
+async def update_client(
         session: AsyncSession,
         client_id: uuid.UUID,
+        update_request: ClientUpdateRequest,
 ) -> Client | None:
+    values = update_request.model_dump(exclude_none=True)
     client = await session.scalar(
-        select(Client)
+        update(Client)
         .where(Client.id == client_id)
+        .values(**values)
+        .returning(Client)
     )
+    await session.commit()
     return client
 
 
@@ -51,20 +67,4 @@ async def find_client_by_substr(
         .limit(20)
     )
     return clients.all()
-
-
-async def update_client(
-        session: AsyncSession,
-        client_id: uuid.UUID,
-        update_request: ClientUpdateRequest,
-) -> Client | None:
-    values = update_request.model_dump(exclude_none=True)
-    client = await session.scalar(
-        update(Client)
-        .where(Client.id == client_id)
-        .values(**values)
-        .returning(Client)
-    )
-    await session.commit()
-    return client
 

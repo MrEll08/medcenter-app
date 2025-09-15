@@ -9,6 +9,17 @@ from app.schemas import DoctorCreateRequest
 from app.schemas.doctor import DoctorUpdateRequest
 
 
+async def get_doctor_by_id(
+        session: AsyncSession,
+        doctor_id: uuid.UUID,
+) -> Doctor | None:
+    doctor = await session.scalar(
+        select(Doctor)
+        .where(Doctor.id == doctor_id)
+    )
+    return doctor
+
+
 async def create_doctor(
         session: AsyncSession,
         potential_doctor: DoctorCreateRequest,
@@ -20,14 +31,19 @@ async def create_doctor(
     return doctor
 
 
-async def get_doctor_by_id(
+async def update_doctor(
         session: AsyncSession,
         doctor_id: uuid.UUID,
+        update_request: DoctorUpdateRequest,
 ) -> Doctor | None:
+    values = update_request.model_dump(exclude_none=True)
     doctor = await session.scalar(
-        select(Doctor)
+        update(Doctor)
         .where(Doctor.id == doctor_id)
+        .values(**values)
+        .returning(Doctor)
     )
+    await session.commit()
     return doctor
 
 
@@ -47,19 +63,3 @@ async def find_doctor_by_substr(
         .limit(20)
     )
     return doctors.all()
-
-
-async def update_doctor(
-        session: AsyncSession,
-        doctor_id: uuid.UUID,
-        update_request: DoctorUpdateRequest,
-) -> Doctor | None:
-    values = update_request.model_dump(exclude_none=True)
-    doctor = await session.scalar(
-        update(Doctor)
-        .where(Doctor.id == doctor_id)
-        .values(**values)
-        .returning(Doctor)
-    )
-    await session.commit()
-    return doctor

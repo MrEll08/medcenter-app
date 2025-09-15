@@ -25,35 +25,6 @@ async def get_visits(
     return visits
 
 
-@router.post(
-    "/",
-    status_code=status.HTTP_201_CREATED,
-    response_model=VisitResponse,
-    responses={
-        status.HTTP_422_UNPROCESSABLE_ENTITY: {"description": "Validation error"},
-    }
-)
-async def create_new_visit(
-        _: Request,
-        potential_visit: VisitCreateRequest = Body(...),
-        session: AsyncSession = Depends(get_session)
-):
-    visit = await create_visit(session, potential_visit)
-    return visit
-
-
-@router.delete(
-    "/{visit_id}",
-    status_code=status.HTTP_204_NO_CONTENT,
-)
-async def delete_visit_by_id(
-        _: Request,
-        visit_id: uuid.UUID,
-        session: AsyncSession = Depends(get_session)
-):
-    await delete_visit(session, visit_id)
-
-
 @router.get(
     "/{visit_id}",
     status_code=status.HTTP_200_OK,
@@ -70,6 +41,23 @@ async def get_visit(
     visit = await get_visit_by_id(session, visit_id)
     if not visit:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+    return visit
+
+
+@router.post(
+    "/",
+    status_code=status.HTTP_201_CREATED,
+    response_model=VisitResponse,
+    responses={
+        status.HTTP_422_UNPROCESSABLE_ENTITY: {"description": "Validation error"},
+    }
+)
+async def create_new_visit(
+        _: Request,
+        potential_visit: VisitCreateRequest = Body(...),
+        session: AsyncSession = Depends(get_session)
+):
+    visit = await create_visit(session, potential_visit)
     return visit
 
 
@@ -91,3 +79,15 @@ async def patch_visit(
     if not visit:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
     return visit
+
+
+@router.delete(
+    "/{visit_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+async def delete_visit_by_id(
+        _: Request,
+        visit_id: uuid.UUID,
+        session: AsyncSession = Depends(get_session)
+):
+    await delete_visit(session, visit_id)

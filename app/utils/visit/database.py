@@ -7,6 +7,17 @@ from app.db.models import Visit
 from app.schemas.visit import VisitCreateRequest, VisitSearchRequest, VisitUpdateRequest
 
 
+async def get_visit_by_id(
+        session: AsyncSession,
+        visit_id: uuid.UUID,
+) -> Visit | None:
+    visit = await session.scalar(
+        select(Visit)
+        .where(Visit.id == visit_id)
+    )
+    return visit
+
+
 async def create_visit(
         session: AsyncSession,
         potential_visit: VisitCreateRequest
@@ -15,6 +26,22 @@ async def create_visit(
     session.add(visit)
     await session.commit()
     await session.refresh(visit)
+    return visit
+
+
+async def update_visit(
+        session: AsyncSession,
+        visit_id: uuid.UUID,
+        update_request: VisitUpdateRequest,
+) -> Visit | None:
+    values = update_request.model_dump(exclude_none=True)
+    visit = await session.scalar(
+        update(Visit)
+        .where(Visit.id == visit_id)
+        .values(**values)
+        .returning(Visit)
+    )
+    await session.commit()
     return visit
 
 
@@ -27,17 +54,6 @@ async def delete_visit(
         .where(Visit.id == visit_id)
     )
     await session.delete(visit)
-
-
-async def get_visit_by_id(
-        session: AsyncSession,
-        visit_id: uuid.UUID,
-) -> Visit | None:
-    visit = await session.scalar(
-        select(Visit)
-        .where(Visit.id == visit_id)
-    )
-    return visit
 
 
 async def get_visits_by_filter(
@@ -61,19 +77,3 @@ async def get_visits_by_filter(
         query = query.where(Visit.status == search_visit.status)
     visits = await session.execute(query)
     return visits.scalars().all()
-
-
-async def update_visit(
-        session: AsyncSession,
-        visit_id: uuid.UUID,
-        update_request: VisitUpdateRequest,
-) -> Visit | None:
-    values = update_request.model_dump(exclude_none=True)
-    visit = await session.scalar(
-        update(Visit)
-        .where(Visit.id == visit_id)
-        .values(**values)
-        .returning(Visit)
-    )
-    await session.commit()
-    return visit

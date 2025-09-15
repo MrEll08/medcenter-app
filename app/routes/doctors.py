@@ -12,21 +12,18 @@ from app.utils.visit import get_visits_by_filter
 router = APIRouter(prefix="/doctors", tags=["doctor"])
 
 
-@router.post(
+@router.get(
     "/",
-    status_code=status.HTTP_201_CREATED,
-    response_model=DoctorResponse,
-    responses={
-        status.HTTP_422_UNPROCESSABLE_ENTITY: {"description": "Validation error"},
-    }
+    response_model=list[DoctorResponse],
+    status_code=status.HTTP_200_OK
 )
-async def create_new_doctor(
+async def find_doctors(
         _: Request,
-        potential_doctor: DoctorCreateRequest = Body(...),
-        session: AsyncSession = Depends(get_session)
+        session: AsyncSession = Depends(get_session),
+        search_substr: str = Query(default="", title="Search substr"),
 ):
-    doctor = await create_doctor(session, potential_doctor)
-    return doctor
+    doctors = await find_doctor_by_substr(session, search_substr)
+    return doctors
 
 
 @router.get(
@@ -51,17 +48,35 @@ async def get_doctor(
 
 
 @router.get(
-    "/",
-    response_model=list[DoctorResponse],
-    status_code=status.HTTP_200_OK
+    "/{doctor_id}/visits",
+    response_model=list[VisitResponse],
+    status_code=status.HTTP_200_OK,
 )
-async def find_doctors(
+async def get_visits(
         _: Request,
+        doctor_id: uuid.UUID,
         session: AsyncSession = Depends(get_session),
-        search_substr: str = Query(default="", title="Search substr"),
 ):
-    doctors = await find_doctor_by_substr(session, search_substr)
-    return doctors
+    search = VisitSearchRequest(doctor_id=doctor_id)
+    visits = await get_visits_by_filter(session, search)
+    return visits
+
+
+@router.post(
+    "/",
+    status_code=status.HTTP_201_CREATED,
+    response_model=DoctorResponse,
+    responses={
+        status.HTTP_422_UNPROCESSABLE_ENTITY: {"description": "Validation error"},
+    }
+)
+async def create_new_doctor(
+        _: Request,
+        potential_doctor: DoctorCreateRequest = Body(...),
+        session: AsyncSession = Depends(get_session)
+):
+    doctor = await create_doctor(session, potential_doctor)
+    return doctor
 
 
 @router.patch(
@@ -82,18 +97,3 @@ async def patch_doctor(
     if doctor is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
     return doctor
-
-
-@router.get(
-    "/{doctor_id}/visits",
-    response_model=list[VisitResponse],
-    status_code=status.HTTP_200_OK,
-)
-async def get_visits(
-        _: Request,
-        doctor_id: uuid.UUID,
-        session: AsyncSession = Depends(get_session),
-):
-    search = VisitSearchRequest(doctor_id=doctor_id)
-    visits = await get_visits_by_filter(session, search)
-    return visits
