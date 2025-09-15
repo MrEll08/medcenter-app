@@ -17,8 +17,8 @@ export default function App() {
                     selectedKeys={selected}
                     items={[
                         { key: '/', label: <Link to="/">Доктора</Link> },
-                        // { key: '/clients', label: <Link to="/clients">Клиенты</Link> },
-                        // { key: '/visits', label: <Link to="/visits">Визиты</Link> },
+                        { key: '/clients', label: <Link to="/clients">Клиенты</Link> },
+                        { key: '/visits', label: <Link to="/visits">Визиты</Link> },
                     ]}
                 />
             </Header>

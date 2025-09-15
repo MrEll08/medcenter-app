@@ -155,21 +155,12 @@ export interface components {
         ClientCreateRequest: {
             /** Full Name */
             full_name: string;
-            /**
-             * Name
-             * @default
-             */
-            name: string;
-            /**
-             * Surname
-             * @default
-             */
-            surname: string;
-            /**
-             * Patronymic
-             * @default
-             */
-            patronymic: string | null;
+            /** Name */
+            name?: string | null;
+            /** Surname */
+            surname?: string | null;
+            /** Patronymic */
+            patronymic?: string | null;
             /** Phone Number */
             phone_number: string;
             /**
@@ -230,21 +221,12 @@ export interface components {
         DoctorCreateRequest: {
             /** Full Name */
             full_name: string;
-            /**
-             * Name
-             * @default
-             */
-            name: string;
-            /**
-             * Surname
-             * @default
-             */
-            surname: string;
-            /**
-             * Patronymic
-             * @default
-             */
-            patronymic: string | null;
+            /** Name */
+            name?: string | null;
+            /** Surname */
+            surname?: string | null;
+            /** Patronymic */
+            patronymic?: string | null;
             /** Speciality */
             speciality: string;
         };

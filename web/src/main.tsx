@@ -5,6 +5,8 @@ import { createBrowserRouter, RouterProvider } from 'react-router-dom'
 import App from './App'
 import DoctorsPage from './pages/DoctorsPage'
 import 'antd/dist/reset.css'
+import ClientsPage from "./pages/ClientsPage.tsx";
+import VisitsPage from "./pages/VisitsPage.tsx";
 
 const qc = new QueryClient()
 
@@ -14,9 +16,8 @@ const router = createBrowserRouter([
         element: <App />,
         children: [
             { index: true, element: <DoctorsPage /> },
-            // позже добавлю:
-            // { path: 'clients', element: <ClientsPage /> },
-            // { path: 'visits', element: <VisitsPage /> },
+            { path: 'clients', element: <ClientsPage /> },
+            { path: 'visits', element: <VisitsPage /> },
         ],
     },
 ])
