@@ -1,4 +1,4 @@
-from app.schemas.human import HumanResponse, HumanCreateRequest
+from app.schemas.human import HumanResponse, HumanCreateRequest, HumanUpdateRequest
 
 
 class DoctorCreateRequest(HumanCreateRequest):
@@ -7,3 +7,7 @@ class DoctorCreateRequest(HumanCreateRequest):
 
 class DoctorResponse(HumanResponse):
     speciality: str
+
+
+class DoctorUpdateRequest(HumanUpdateRequest):
+    speciality: str | None = None

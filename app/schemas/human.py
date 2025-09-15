@@ -1,6 +1,9 @@
+from datetime import date
+
 from pydantic import BaseModel, model_validator
 
-from app.schemas.base import BaseCreateRequest, BaseResponse
+from app.schemas.base import BaseCreateRequest, BaseResponse, BaseUpdateRequest
+from app.utils.common import split_full_name
 
 
 class HumanCreateRequest(BaseCreateRequest):
@@ -11,17 +14,8 @@ class HumanCreateRequest(BaseCreateRequest):
     patronymic: str | None = ""
 
     @model_validator(mode="after")
-    def split_full_name(self):
-        parts = self.full_name.split(" ")
-
-        match len(parts):
-            case 3:
-                self.surname, self.name, self.patronymic = parts
-            case 2:
-                self.surname, self.name = parts
-            case _:
-                raise ValueError(f"Invalid full name. It must have 2 or 3 parts, got: {self.full_name}")
-
+    def split_name(self):
+        self.surname, self.name, self.patronymic = split_full_name(self.full_name)
         return self
 
 
@@ -31,3 +25,17 @@ class HumanResponse(BaseResponse):
     patronymic: str | None
 
     full_name: str
+
+
+class HumanUpdateRequest(BaseModel):
+    full_name: str | None = None
+
+    name: str | None = None
+    surname: str | None = None
+    patronymic: str | None = None
+
+    @model_validator(mode="after")
+    def split_name(self):
+        if self.full_name is not None:
+            self.surname, self.name, self.patronymic = split_full_name(self.full_name)
+        return self

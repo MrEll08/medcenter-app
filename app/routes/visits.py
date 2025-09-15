@@ -6,9 +6,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from starlette import status
 
 from app.db.connection import get_session
-from app.schemas.visit import VisitResponse, VisitCreateRequest, VisitSearchRequest
-from app.utils.visit import create_visit, delete_visit, get_visit_by_id
-from app.utils.visit.database import get_visits_by_filter
+from app.schemas import VisitResponse, VisitCreateRequest, VisitSearchRequest, VisitUpdateRequest
+from app.utils.visit import create_visit, delete_visit, get_visit_by_id, get_visits_by_filter, update_visit
 
 router = APIRouter(prefix="/visits", tags=["visits"])
 
@@ -69,6 +68,26 @@ async def get_visit(
         session: AsyncSession = Depends(get_session),
 ):
     visit = await get_visit_by_id(session, visit_id)
+    if not visit:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+    return visit
+
+
+@router.patch(
+    "/{visit_id}",
+    status_code=status.HTTP_200_OK,
+    response_model=VisitResponse,
+    responses={
+        status.HTTP_404_NOT_FOUND: {"description": "Not found"},
+    }
+)
+async def patch_visit(
+        _: Request,
+        visit_id: uuid.UUID,
+        update_request: VisitUpdateRequest = Body(...),
+        session: AsyncSession = Depends(get_session),
+):
+    visit = await update_visit(session, visit_id, update_request)
     if not visit:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
     return visit

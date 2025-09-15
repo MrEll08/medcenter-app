@@ -1,11 +1,12 @@
 import uuid
 from typing import Sequence
 
-from sqlalchemy import select, or_, func
+from sqlalchemy import select, or_, func, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.models import Doctor
-from app.schemas import VisitCreateRequest, DoctorCreateRequest
+from app.schemas import DoctorCreateRequest
+from app.schemas.doctor import DoctorUpdateRequest
 
 
 async def create_doctor(
@@ -46,3 +47,19 @@ async def find_doctor_by_substr(
         .limit(20)
     )
     return doctors.all()
+
+
+async def update_doctor(
+        session: AsyncSession,
+        doctor_id: uuid.UUID,
+        update_request: DoctorUpdateRequest,
+) -> Doctor | None:
+    values = update_request.model_dump(exclude_none=True)
+    doctor = await session.scalar(
+        update(Doctor)
+        .where(Doctor.id == doctor_id)
+        .values(**values)
+        .returning(Doctor)
+    )
+    await session.commit()
+    return doctor

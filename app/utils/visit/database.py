@@ -1,10 +1,10 @@
 import uuid
 
-from sqlalchemy import select, Sequence
+from sqlalchemy import select, Sequence, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.models import Visit
-from app.schemas.visit import VisitCreateRequest, VisitSearchRequest
+from app.schemas.visit import VisitCreateRequest, VisitSearchRequest, VisitUpdateRequest
 
 
 async def create_visit(
@@ -61,3 +61,19 @@ async def get_visits_by_filter(
         query = query.where(Visit.status == search_visit.status)
     visits = await session.execute(query)
     return visits.scalars().all()
+
+
+async def update_visit(
+        session: AsyncSession,
+        visit_id: uuid.UUID,
+        update_request: VisitUpdateRequest,
+) -> Visit | None:
+    values = update_request.model_dump(exclude_none=True)
+    visit = await session.scalar(
+        update(Visit)
+        .where(Visit.id == visit_id)
+        .values(**values)
+        .returning(Visit)
+    )
+    await session.commit()
+    return visit

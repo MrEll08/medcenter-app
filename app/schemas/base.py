@@ -15,3 +15,6 @@ class BaseResponse(BaseModel):
 
     dt_created: datetime
     dt_updated: datetime
+
+class BaseUpdateRequest(BaseModel):
+    id: uuid.UUID

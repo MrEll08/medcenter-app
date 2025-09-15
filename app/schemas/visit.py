@@ -47,3 +47,16 @@ class VisitSearchRequest(BaseModel):
     cabinet: str | None = None
     procedure: str | None = None
     status: VisitStatusEnum | None = None
+
+
+class VisitUpdateRequest(BaseModel):
+    client_id: uuid.UUID | None = None
+    doctor_id: uuid.UUID | None = None
+
+    start_date: datetime.datetime | None = None
+    end_date: datetime.datetime | None = None
+
+    cost: float | None = None
+    cabinet: str | None = None
+    procedure: str | None = None
+    status: VisitStatusEnum | None = None

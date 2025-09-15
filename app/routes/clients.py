@@ -6,9 +6,8 @@ from starlette import status
 from starlette.status import HTTP_404_NOT_FOUND
 
 from app.db.connection import get_session
-from app.schemas import ClientCreateRequest, ClientResponse, VisitResponse
-from app.schemas.visit import VisitSearchRequest
-from app.utils.client import create_client, find_client_by_substr, get_client_by_id
+from app.schemas import ClientCreateRequest, ClientResponse, ClientUpdateRequest, VisitResponse, VisitSearchRequest
+from app.utils.client import create_client, find_client_by_substr, get_client_by_id, update_client
 from app.utils.visit import get_visits_by_filter
 
 router = APIRouter(prefix="/clients", tags=["client"])
@@ -55,6 +54,26 @@ async def get_client(
     client = await get_client_by_id(session, client_id)
     if not client:
         raise HTTPException(status_code=HTTP_404_NOT_FOUND)
+    return client
+
+
+@router.patch(
+    "/{client_id}",
+    status_code=status.HTTP_200_OK,
+    response_model=ClientResponse,
+    responses={
+        status.HTTP_404_NOT_FOUND: {"description": "Client not found"},
+    }
+)
+async def patch_client(
+        _: Request,
+        client_id: uuid.UUID,
+        update_request: ClientUpdateRequest = Body(...),
+        session: AsyncSession = Depends(get_session)
+):
+    client = await update_client(session, client_id, update_request)
+    if client is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
     return client
 
 

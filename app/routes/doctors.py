@@ -5,9 +5,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from starlette import status
 
 from app.db.connection import get_session
-from app.schemas import DoctorResponse, DoctorCreateRequest
-from app.schemas.visit import VisitSearchRequest, VisitResponse
-from app.utils.doctor import create_doctor, get_doctor_by_id, find_doctor_by_substr
+from app.schemas import DoctorResponse, DoctorCreateRequest, DoctorUpdateRequest, VisitSearchRequest, VisitResponse
+from app.utils.doctor import create_doctor, get_doctor_by_id, find_doctor_by_substr, update_doctor
 from app.utils.visit import get_visits_by_filter
 
 router = APIRouter(prefix="/doctors", tags=["doctor"])
@@ -63,6 +62,26 @@ async def find_doctors(
 ):
     doctors = await find_doctor_by_substr(session, search_substr)
     return doctors
+
+
+@router.patch(
+    "/{doctor_id}",
+    status_code=status.HTTP_200_OK,
+    response_model=DoctorResponse,
+    responses={
+        status.HTTP_404_NOT_FOUND: {"description": "Doctor not found"},
+    }
+)
+async def patch_doctor(
+        _: Request,
+        doctor_id: uuid.UUID,
+        update_request: DoctorUpdateRequest = Body(...),
+        session: AsyncSession = Depends(get_session)
+):
+    doctor = await update_doctor(session, doctor_id, update_request)
+    if doctor is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+    return doctor
 
 
 @router.get(

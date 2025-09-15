@@ -1,10 +1,11 @@
 import uuid
 
-from sqlalchemy import Sequence, exc, func, or_, select
+from sqlalchemy import Sequence, exc, func, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.models import Client
 from app.schemas import ClientCreateRequest
+from app.schemas.client import ClientUpdateRequest
 
 
 async def create_client(
@@ -50,3 +51,20 @@ async def find_client_by_substr(
         .limit(20)
     )
     return clients.all()
+
+
+async def update_client(
+        session: AsyncSession,
+        client_id: uuid.UUID,
+        update_request: ClientUpdateRequest,
+) -> Client | None:
+    values = update_request.model_dump(exclude_none=True)
+    client = await session.scalar(
+        update(Client)
+        .where(Client.id == client_id)
+        .values(**values)
+        .returning(Client)
+    )
+    await session.commit()
+    return client
+
