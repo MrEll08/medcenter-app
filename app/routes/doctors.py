@@ -1,12 +1,18 @@
 import uuid
 
-from fastapi import APIRouter, Request, Body, Depends, HTTPException, Query
+from fastapi import APIRouter, Body, Depends, HTTPException, Query, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette import status
 
 from app.db.connection import get_session
-from app.schemas import DoctorResponse, DoctorCreateRequest, DoctorUpdateRequest, VisitSearchRequest, VisitResponse
-from app.utils.doctor import create_doctor, get_doctor_by_id, find_doctor_by_substr, update_doctor
+from app.schemas import (
+    DoctorCreateRequest,
+    DoctorResponse,
+    DoctorUpdateRequest,
+    VisitResponse,
+    VisitSearchRequest,
+)
+from app.utils.doctor import create_doctor, find_doctor_by_substr, get_doctor_by_id, update_doctor
 from app.utils.visit import get_visits_by_filter
 
 router = APIRouter(prefix="/doctors", tags=["doctor"])

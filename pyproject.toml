@@ -15,7 +15,7 @@ fix = true
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM"]
-ignore = ["E203", "E501"]
+ignore = ["E203", "E501", "B008"]
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401"]

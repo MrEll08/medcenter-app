@@ -1,7 +1,6 @@
 import uuid
-from typing import Sequence
 
-from sqlalchemy import select, or_, func, update
+from sqlalchemy import Sequence, func, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.models import Doctor

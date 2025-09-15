@@ -1,8 +1,6 @@
-from datetime import date
-
 from pydantic import BaseModel, model_validator
 
-from app.schemas.base import BaseCreateRequest, BaseResponse, BaseUpdateRequest
+from app.schemas.base import BaseCreateRequest, BaseResponse
 from app.utils.common import split_full_name
 
 

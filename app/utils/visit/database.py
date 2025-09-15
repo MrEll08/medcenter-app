@@ -1,6 +1,6 @@
 import uuid
 
-from sqlalchemy import select, Sequence, update
+from sqlalchemy import Sequence, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.models import Visit

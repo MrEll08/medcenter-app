@@ -1,13 +1,19 @@
 import uuid
 
-from fastapi import APIRouter, Request, Body, HTTPException
+from fastapi import APIRouter, Body, HTTPException, Request
 from fastapi.params import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette import status
 
 from app.db.connection import get_session
-from app.schemas import VisitResponse, VisitCreateRequest, VisitSearchRequest, VisitUpdateRequest
-from app.utils.visit import create_visit, delete_visit, get_visit_by_id, get_visits_by_filter, update_visit
+from app.schemas import VisitCreateRequest, VisitResponse, VisitSearchRequest, VisitUpdateRequest
+from app.utils.visit import (
+    create_visit,
+    delete_visit,
+    get_visit_by_id,
+    get_visits_by_filter,
+    update_visit,
+)
 
 router = APIRouter(prefix="/visits", tags=["visits"])
 

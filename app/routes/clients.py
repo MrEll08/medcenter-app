@@ -6,7 +6,13 @@ from starlette import status
 from starlette.status import HTTP_404_NOT_FOUND
 
 from app.db.connection import get_session
-from app.schemas import ClientCreateRequest, ClientResponse, ClientUpdateRequest, VisitResponse, VisitSearchRequest
+from app.schemas import (
+    ClientCreateRequest,
+    ClientResponse,
+    ClientUpdateRequest,
+    VisitResponse,
+    VisitSearchRequest,
+)
 from app.utils.client import create_client, find_client_by_substr, get_client_by_id, update_client
 from app.utils.visit import get_visits_by_filter
 

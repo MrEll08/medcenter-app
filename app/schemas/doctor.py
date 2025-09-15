@@ -1,4 +1,4 @@
-from app.schemas.human import HumanResponse, HumanCreateRequest, HumanUpdateRequest
+from app.schemas.human import HumanCreateRequest, HumanResponse, HumanUpdateRequest
 
 
 class DoctorCreateRequest(HumanCreateRequest):
