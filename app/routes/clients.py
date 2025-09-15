@@ -13,7 +13,7 @@ from app.schemas import (
     VisitResponse,
     VisitSearchRequest,
 )
-from app.utils.client import create_client, find_client_by_substr, get_client_by_id, update_client
+from app.utils.client import create_new_client, find_client_by_substr, get_client_by_id, update_client
 from app.utils.visit import get_visits_by_filter
 
 router = APIRouter(prefix="/clients", tags=["client"])
@@ -42,12 +42,12 @@ async def find_clients(
         status.HTTP_409_CONFLICT: {"description": "Client with this phone number already exists"},
     },
 )
-async def create_new_client(
+async def create_client(
         _: Request,
         potential_client: ClientCreateRequest = Body(...),
         session: AsyncSession = Depends(get_session),
 ):
-    client, message = await create_client(session, potential_client)
+    client, message = await create_new_client(session, potential_client)
 
     if not client:
         raise HTTPException(

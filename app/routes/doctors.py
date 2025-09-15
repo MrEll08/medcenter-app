@@ -12,7 +12,7 @@ from app.schemas import (
     VisitResponse,
     VisitSearchRequest,
 )
-from app.utils.doctor import create_doctor, find_doctor_by_substr, get_doctor_by_id, update_doctor
+from app.utils.doctor import create_new_doctor, find_doctor_by_substr, get_doctor_by_id, update_doctor
 from app.utils.visit import get_visits_by_filter
 
 router = APIRouter(prefix="/doctors", tags=["doctor"])
@@ -40,12 +40,12 @@ async def find_doctors(
         status.HTTP_422_UNPROCESSABLE_ENTITY: {"description": "Validation error"},
     }
 )
-async def create_new_doctor(
+async def create_doctor(
         _: Request,
         potential_doctor: DoctorCreateRequest = Body(...),
         session: AsyncSession = Depends(get_session)
 ):
-    doctor = await create_doctor(session, potential_doctor)
+    doctor = await create_new_doctor(session, potential_doctor)
     return doctor
 
 

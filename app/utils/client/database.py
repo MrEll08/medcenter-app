@@ -19,7 +19,7 @@ async def get_client_by_id(
     return client
 
 
-async def create_client(
+async def create_new_client(
         session: AsyncSession,
         potential_client: ClientCreateRequest
 ) -> tuple[Client | None, str]:

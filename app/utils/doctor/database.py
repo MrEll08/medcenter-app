@@ -19,7 +19,7 @@ async def get_doctor_by_id(
     return doctor
 
 
-async def create_doctor(
+async def create_new_doctor(
         session: AsyncSession,
         potential_doctor: DoctorCreateRequest,
 ) -> Doctor:

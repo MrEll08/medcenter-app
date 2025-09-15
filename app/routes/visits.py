@@ -8,8 +8,8 @@ from starlette import status
 from app.db.connection import get_session
 from app.schemas import VisitCreateRequest, VisitResponse, VisitSearchRequest, VisitUpdateRequest
 from app.utils.visit import (
-    create_visit,
-    delete_visit,
+    create_new_visit,
+    delete_visit_by_id,
     get_visit_by_id,
     get_visits_by_filter,
     update_visit,
@@ -39,12 +39,12 @@ async def get_visits(
         status.HTTP_422_UNPROCESSABLE_ENTITY: {"description": "Validation error"},
     }
 )
-async def create_new_visit(
+async def create_visit(
         _: Request,
         potential_visit: VisitCreateRequest = Body(...),
         session: AsyncSession = Depends(get_session)
 ):
-    visit = await create_visit(session, potential_visit)
+    visit = await create_new_visit(session, potential_visit)
     return visit
 
 
@@ -91,9 +91,9 @@ async def patch_visit(
     "/{visit_id}",
     status_code=status.HTTP_204_NO_CONTENT,
 )
-async def delete_visit_by_id(
+async def delete_visit(
         _: Request,
         visit_id: uuid.UUID,
         session: AsyncSession = Depends(get_session)
 ):
-    await delete_visit(session, visit_id)
+    await delete_visit_by_id(session, visit_id)

@@ -18,7 +18,7 @@ async def get_visit_by_id(
     return visit
 
 
-async def create_visit(
+async def create_new_visit(
         session: AsyncSession,
         potential_visit: VisitCreateRequest
 ) -> Visit:
@@ -45,7 +45,7 @@ async def update_visit(
     return visit
 
 
-async def delete_visit(
+async def delete_visit_by_id(
         session: AsyncSession,
         visit_id: uuid.UUID,
 ) -> None:
