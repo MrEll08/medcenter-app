@@ -1,21 +1,23 @@
-import { useMemo, useState } from 'react'
-import { Button, DatePicker, Form, Input, InputNumber, Modal, Select, Space, Table, Tag, message } from 'antd'
-import type { ColumnsType } from 'antd/es/table'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import dayjs, { Dayjs } from 'dayjs'
-import { api } from '../../lib/api'
+import {useMemo, useState} from 'react'
+import {Button, DatePicker, Form, Input, InputNumber, Modal, Select, Space, Table, Tag, message, Popconfirm} from 'antd'
+import type {ColumnsType} from 'antd/es/table'
+import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query'
+import dayjs, {Dayjs} from 'dayjs'
+import {api} from '../../lib/api'
 import type {
     VisitCreateRequest,
     VisitResponse,
     VisitStatusEnum,
     VisitUpdateRequest,
 } from '../../api'
-import { getErrorMessage } from '../../lib/errors'
+import {getErrorMessage} from '../../lib/errors'
 import EntitySelect from '../EntitySelect'
-import {Pencil, Trash2} from "lucide-react";
+import {Info, Pencil, Trash2} from "lucide-react";
+import {useNavigate} from 'react-router-dom'
 
-const { RangePicker } = DatePicker
-const STATUS: VisitStatusEnum[] = ['UNCONFIRMED','CONFIRMED','IN_PROGRESS','COMPLETED','PAID']
+const {RangePicker} = DatePicker
+const STATUS: VisitStatusEnum[] = ['UNCONFIRMED', 'CONFIRMED', 'IN_PROGRESS', 'COMPLETED', 'PAID']
+import EntityLink from '../EntityLink'
 
 type VisitFormValues = {
     // ids
@@ -80,22 +82,25 @@ function combineDateAndTime(date: Dayjs, time: Dayjs): string {
 }
 
 async function fetchVisits(params: VisitQueryParams): Promise<VisitResponse[]> {
-    const res = await api.get<VisitResponse[]>('/visits/', { params })
+    const res = await api.get<VisitResponse[]>('/visits/', {params})
     return res.data
 }
+
 async function createVisit(body: VisitCreateRequest): Promise<VisitResponse> {
     const res = await api.post<VisitResponse>('/visits/', body)
     return res.data
 }
+
 async function updateVisit(id: string, body: VisitUpdateRequest): Promise<VisitResponse> {
     const res = await api.patch<VisitResponse>(`/visits/${id}`, body)
     return res.data
 }
+
 async function deleteVisit(id: string): Promise<void> {
     await api.delete(`/visits/${id}`)
 }
 
-export default function VisitsManager({ context, show, defaultLimit = 30 }: Props) {
+export default function VisitsManager({context, show, defaultLimit = 30}: Props) {
     const qc = useQueryClient()
 
     // -------- Фильтры списка --------
@@ -109,7 +114,7 @@ export default function VisitsManager({ context, show, defaultLimit = 30 }: Prop
     const [limit, setLimit] = useState<number>(defaultLimit)
 
     const params: VisitQueryParams = useMemo(() => {
-        const p: VisitQueryParams = { search_limit: limit }
+        const p: VisitQueryParams = {search_limit: limit}
         if (clientId) p.client_id = clientId
         if (doctorId) p.doctor_id = doctorId
         if (status) p.status = status
@@ -125,7 +130,7 @@ export default function VisitsManager({ context, show, defaultLimit = 30 }: Prop
         return p
     }, [clientId, doctorId, status, cabinet, procedure, day, range, limit])
 
-    const { data, isLoading, refetch } = useQuery({
+    const {data, isLoading, refetch} = useQuery({
         queryKey: ['visits', params],
         queryFn: () => fetchVisits(params),
     })
@@ -135,12 +140,15 @@ export default function VisitsManager({ context, show, defaultLimit = 30 }: Prop
     const [editing, setEditing] = useState<VisitResponse | null>(null)
     const [form] = Form.useForm<VisitFormValues>()
 
+    const navigate = useNavigate()
+
     const createMut = useMutation({
         mutationFn: (b: VisitCreateRequest) => createVisit(b),
         onSuccess: () => {
             message.success('Визит создан')
-            qc.invalidateQueries({ queryKey: ['visits'] })
-            setOpen(false); form.resetFields()
+            qc.invalidateQueries({queryKey: ['visits']})
+            setOpen(false);
+            form.resetFields()
         },
         onError: (err: unknown) => message.error(getErrorMessage(err)),
     })
@@ -149,8 +157,10 @@ export default function VisitsManager({ context, show, defaultLimit = 30 }: Prop
         mutationFn: (b: VisitUpdateRequest) => updateVisit(editing!.id, b),
         onSuccess: () => {
             message.success('Сохранено')
-            qc.invalidateQueries({ queryKey: ['visits'] })
-            setOpen(false); setEditing(null); form.resetFields()
+            qc.invalidateQueries({queryKey: ['visits']})
+            setOpen(false);
+            setEditing(null);
+            form.resetFields()
         },
         onError: (err: unknown) => message.error(getErrorMessage(err)),
     })
@@ -159,7 +169,7 @@ export default function VisitsManager({ context, show, defaultLimit = 30 }: Prop
         mutationFn: (id: string) => deleteVisit(id),
         onSuccess: () => {
             message.success('Удалено')
-            qc.invalidateQueries({ queryKey: ['visits'] })
+            qc.invalidateQueries({queryKey: ['visits']})
         },
         onError: (err: unknown) => message.error(getErrorMessage(err)),
     })
@@ -189,19 +199,36 @@ export default function VisitsManager({ context, show, defaultLimit = 30 }: Prop
         })
     }
     if (show?.client !== false && !context?.clientId) {
-        columns.push({ title: 'Клиент', dataIndex: 'client_name' })
+        columns.push({
+            title: 'Клиент',
+            key: 'client',
+            render: (row) => (
+                <EntityLink kind="clients" id={row.client_id} label={row.client_name}/>
+            ),
+        })
     }
     if (show?.doctor !== false && !context?.doctorId) {
-        columns.push({ title: 'Доктор', dataIndex: 'doctor_name' })
+        columns.push({
+            title: 'Доктор',
+            key: 'doctor',
+            render: (row) => (
+                <EntityLink kind="doctors" id={row.doctor_id} label={row.doctor_name}/>
+            ),
+        })
     }
     if (show?.procedure !== false) {
-        columns.push({ title: 'Процедура', dataIndex: 'procedure', render: (v?: string | null) => v ?? '—', ellipsis: true })
+        columns.push({
+            title: 'Процедура',
+            dataIndex: 'procedure',
+            render: (v?: string | null) => v ?? '—',
+            ellipsis: true
+        })
     }
     if (show?.cabinet !== false) {
-        columns.push({ title: 'Кабинет', dataIndex: 'cabinet', render: (v?: string | null) => v ?? '—' })
+        columns.push({title: 'Кабинет', dataIndex: 'cabinet', render: (v?: string | null) => v ?? '—'})
     }
     if (show?.cost !== false) {
-        columns.push({ title: 'Стоимость', dataIndex: 'cost', render: (v?: number | null) => v ?? '—' })
+        columns.push({title: 'Стоимость', dataIndex: 'cost', render: (v?: number | null) => v ?? '—'})
     }
     if (show?.status !== false) {
         columns.push({
@@ -217,7 +244,15 @@ export default function VisitsManager({ context, show, defaultLimit = 30 }: Prop
             render: (_, row) => (
                 <Space>
                     <Button
+                        className="p-1 rounded-full bg-blue-50 hover:bg-blue-100"
+                        onClick={() => navigate(`/visits/${row.id}`)}
+                        title="Открыть визит"
+                    >
+                        <Info size={16} color="#2563eb" className="text-blue-600"/>
+                    </Button>
+                    <Button
                         className="p-1 rounded-lg hover:bg-gray-100"
+                        title="Редактировать"
                         onClick={() => {
                             setEditing(row)
                             setOpen(true)
@@ -236,16 +271,30 @@ export default function VisitsManager({ context, show, defaultLimit = 30 }: Prop
                             })
                         }}
                     >
-                        <Pencil size={16} className="text-blue-600" />
+                        <Pencil size={16} className="text-blue-600"/>
                     </Button>
-                    <Button
-                        danger
-                        loading={deleteMut.isPending}
-                        onClick={() => deleteMut.mutate(row.id)}
-                        className="p-1 rounded-lg hover:bg-gray-100"
+                    <Popconfirm
+                        title="Удалить визит?"
+                        okText="Удалить"
+                        cancelText="Отмена"
+                        okButtonProps={{danger: true, loading: deleteMut.isPending}}
+                        onConfirm={(e) => {
+                            // если у строки таблицы есть onClick — не даём всплыть
+                            e?.stopPropagation?.()
+                            deleteMut.mutate(row.id)
+                        }}
+                        onCancel={(e) => e?.stopPropagation?.()}
                     >
-                        <Trash2 size={16} className="text-red-600" />
-                    </Button>
+                        <Button
+                            danger
+                            loading={deleteMut.isPending}
+                            onClick={(e) => e.stopPropagation()}
+                            className="p-1 rounded-lg hover:bg-gray-100"
+                            title="Удалить"
+                        >
+                            <Trash2 size={16} className="text-red-600"/>
+                        </Button>
+                    </Popconfirm>
                 </Space>
             ),
         })
@@ -285,8 +334,8 @@ export default function VisitsManager({ context, show, defaultLimit = 30 }: Prop
                 start_date: startISO!,                       // required
                 end_date: endISO,                            // string | null
                 procedure: v.procedure !== undefined ? v.procedure : null,
-                cabinet:   v.cabinet   !== undefined ? v.cabinet   : null,
-                cost:      v.cost      !== undefined ? v.cost      : null,
+                cabinet: v.cabinet !== undefined ? v.cabinet : null,
+                cost: v.cost !== undefined ? v.cost : null,
                 // status не отправляем — его нет в Create
             }
             createMut.mutate(body)
@@ -297,32 +346,46 @@ export default function VisitsManager({ context, show, defaultLimit = 30 }: Prop
     return (
         <div>
             {/* Фильтры */}
-            <Space wrap style={{ marginBottom: 16 }}>
+            <Space wrap style={{marginBottom: 16}}>
                 {!context?.clientId && (
-                    <EntitySelect entity="clients" value={clientId} onChange={setClientId} placeholder="Клиент" allowClear />
+                    <EntitySelect entity="clients" value={clientId} onChange={setClientId} placeholder="Клиент"
+                                  allowClear/>
                 )}
                 {!context?.doctorId && (
-                    <EntitySelect entity="doctors" value={doctorId} onChange={setDoctorId} placeholder="Доктор" allowClear />
+                    <EntitySelect entity="doctors" value={doctorId} onChange={setDoctorId} placeholder="Доктор"
+                                  allowClear/>
                 )}
                 <Select
                     allowClear
                     placeholder="Статус"
                     value={status}
                     onChange={setStatus}
-                    style={{ width: 220 }}
-                    options={STATUS.map(s => ({ value: s, label: s }))}
+                    style={{width: 220}}
+                    options={STATUS.map(s => ({value: s, label: s}))}
                 />
-                <Input placeholder="Кабинет" value={cabinet} onChange={(e) => setCabinet(e.target.value || undefined)} />
-                <Input placeholder="Процедура" value={procedure} onChange={(e) => setProcedure(e.target.value || undefined)} />
+                {show?.cabinet !== false && (
+                    <Input placeholder="Кабинет" value={cabinet}
+                           onChange={(e) => setCabinet(e.target.value || undefined)}/>
+                )}
+                {show?.procedure !== false && (
+                    <Input placeholder="Процедура" value={procedure}
+                           onChange={(e) => setProcedure(e.target.value || undefined)}/>
+                )}
                 <DatePicker
                     placeholder="День"
                     value={day ?? undefined}
-                    onChange={(d) => { setDay(d ?? null); if (d) setRange(null) }}
+                    onChange={(d) => {
+                        setDay(d ?? null);
+                        if (d) setRange(null)
+                    }}
                 />
                 <RangePicker
                     showTime
                     value={range ?? undefined}
-                    onChange={(v) => { setRange(v && v[0] && v[1] ? [v[0], v[1]] as [Dayjs, Dayjs] : null); if (v && v[0] && v[1]) setDay(null) }}
+                    onChange={(v) => {
+                        setRange(v && v[0] && v[1] ? [v[0], v[1]] as [Dayjs, Dayjs] : null);
+                        if (v && v[0] && v[1]) setDay(null)
+                    }}
                 />
                 <InputNumber
                     min={1}
@@ -349,12 +412,15 @@ export default function VisitsManager({ context, show, defaultLimit = 30 }: Prop
                 </Button>
             </Space>
 
-            <Table<VisitResponse> rowKey="id" loading={isLoading} dataSource={data || []} columns={columns} />
+            <Table<VisitResponse> rowKey="id" loading={isLoading} dataSource={data || []} columns={columns}/>
 
             <Modal
                 title={editing ? 'Редактировать визит' : 'Новый визит'}
                 open={open}
-                onCancel={() => { setOpen(false); setEditing(null) }}
+                onCancel={() => {
+                    setOpen(false);
+                    setEditing(null)
+                }}
                 onOk={onSubmit}
                 okText="Сохранить"
                 cancelText="Отмена"
@@ -362,42 +428,45 @@ export default function VisitsManager({ context, show, defaultLimit = 30 }: Prop
             >
                 <Form form={form} layout="vertical">
                     {!context?.clientId && (
-                        <Form.Item name="client_id" label="Клиент" rules={[{ required: !editing, message: 'Выберите клиента' }]}>
-                            <EntitySelect entity="clients" />
+                        <Form.Item name="client_id" label="Клиент"
+                                   rules={[{required: !editing, message: 'Выберите клиента'}]}>
+                            <EntitySelect entity="clients"/>
                         </Form.Item>
                     )}
                     {!context?.doctorId && (
-                        <Form.Item name="doctor_id" label="Доктор" rules={[{ required: !editing, message: 'Выберите доктора' }]}>
-                            <EntitySelect entity="doctors" />
+                        <Form.Item name="doctor_id" label="Доктор"
+                                   rules={[{required: !editing, message: 'Выберите доктора'}]}>
+                            <EntitySelect entity="doctors"/>
                         </Form.Item>
                     )}
 
-                    <Form.Item name="date" label="Дата" rules={[{ required: !editing, message: 'Укажите дату' }]}>
-                        <DatePicker style={{ width: '100%' }} />
+                    <Form.Item name="date" label="Дата" rules={[{required: !editing, message: 'Укажите дату'}]}>
+                        <DatePicker style={{width: '100%'}}/>
                     </Form.Item>
 
                     <Space size="large">
-                        <Form.Item name="time_start" label="Начало" rules={[{ required: !editing, message: 'Укажите время начала' }]}>
-                            <DatePicker showTime format="HH:mm" picker="time" />
+                        <Form.Item name="time_start" label="Начало"
+                                   rules={[{required: !editing, message: 'Укажите время начала'}]}>
+                            <DatePicker showTime format="HH:mm" picker="time"/>
                         </Form.Item>
                         <Form.Item name="time_end" label="Окончание">
-                            <DatePicker showTime format="HH:mm" picker="time" />
+                            <DatePicker showTime format="HH:mm" picker="time"/>
                         </Form.Item>
                     </Space>
 
                     <Form.Item name="procedure" label="Процедура">
-                        <Input />
+                        <Input/>
                     </Form.Item>
                     <Form.Item name="cabinet" label="Кабинет">
-                        <Input />
+                        <Input/>
                     </Form.Item>
                     <Form.Item name="cost" label="Стоимость">
-                        <InputNumber style={{ width: '100%' }} min={0} step={50} />
+                        <InputNumber style={{width: '100%'}} min={0} step={50}/>
                     </Form.Item>
 
                     {editing && (
                         <Form.Item name="status" label="Статус">
-                            <Select allowClear options={STATUS.map(s => ({ value: s, label: s }))} />
+                            <Select allowClear options={STATUS.map(s => ({value: s, label: s}))}/>
                         </Form.Item>
                     )}
                 </Form>

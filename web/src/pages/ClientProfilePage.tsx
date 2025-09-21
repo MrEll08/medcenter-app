@@ -15,6 +15,7 @@ export default function ClientProfilePage() {
     const navigate = useNavigate()
     if (!id) return <div>Некорректный id</div>
 
+    // eslint-disable-next-line react-hooks/rules-of-hooks
     const { data: client, isLoading } = useQuery({
         queryKey: ['client', id],
         queryFn: () => fetchClient(id),
@@ -56,7 +57,7 @@ export default function ClientProfilePage() {
                     date: true,
                     startTime: true,
                     endTime: true,
-                    procedure: true,
+                    procedure: false,
                     status: true,
                     cabinet: true,
                     cost: true,

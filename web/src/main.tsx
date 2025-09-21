@@ -9,6 +9,7 @@ import ClientsPage from "./pages/ClientsPage.tsx";
 import VisitsPage from "./pages/VisitsPage.tsx";
 import ClientProfilePage from "./pages/ClientProfilePage.tsx";
 import DoctorProfilePage from "./pages/DoctorProfilePage.tsx";
+import VisitDetailPage from "./pages/VisitDetailPage.tsx";
 
 const qc = new QueryClient()
 
@@ -17,11 +18,12 @@ const router = createBrowserRouter([
         path: '/',
         element: <App />,
         children: [
-            { index: true, element: <DoctorsPage /> },
+            { path: 'doctors', element: <DoctorsPage /> },
             { path: 'doctors/:id', element: <DoctorProfilePage /> },
             { path: 'clients', element: <ClientsPage /> },
             { path: 'clients/:id', element: <ClientProfilePage /> },
             { path: 'visits', element: <VisitsPage /> },
+            { path: 'visits/:id', element: <VisitDetailPage /> },
         ],
     },
 ])

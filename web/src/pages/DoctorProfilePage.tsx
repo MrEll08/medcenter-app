@@ -15,6 +15,7 @@ export default function DoctorProfilePage() {
     const navigate = useNavigate()
     if (!id) return <div>Некорректный id</div>
 
+    // eslint-disable-next-line react-hooks/rules-of-hooks
     const { data: doctor, isLoading } = useQuery({
         queryKey: ['doctor', id],
         queryFn: () => fetchDoctor(id),
@@ -54,7 +55,7 @@ export default function DoctorProfilePage() {
                     date: true,
                     startTime: true,
                     endTime: true,
-                    procedure: true,
+                    procedure: false,
                     status: true,
                     cabinet: true,
                     cost: true,

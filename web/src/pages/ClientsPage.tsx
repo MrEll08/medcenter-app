@@ -1,166 +1,86 @@
-import {useEffect, useMemo, useState} from 'react'
-import {Button, DatePicker, Form, Input, Modal, Space, Table, message} from 'antd'
-import type {ColumnsType} from 'antd/es/table'
-import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query'
-import dayjs, {Dayjs} from 'dayjs'
-import {api} from '../lib/api'
-import type {ClientCreateRequest, ClientResponse, ClientUpdateRequest} from '../api'
-import {getErrorMessage} from '../lib/errors'
-import { Pencil } from "lucide-react"
+import { DatePicker, Form, Input } from 'antd'
+import type { ColumnsType } from 'antd/es/table'
+import dayjs, { Dayjs } from 'dayjs'
+import EntityManager from '../components/EntityManager'
+import EntityLink from '../components/EntityLink'
+import { api } from '../lib/api'
+import type { ClientCreateRequest, ClientResponse, ClientUpdateRequest } from '../api'
 
-async function fetchClients(search_substr: string): Promise<ClientResponse[]> {
-    const res = await api.get<ClientResponse[]>('/clients/', {params: {search_substr}})
-    return res.data
-}
-
-async function createClient(body: ClientCreateRequest): Promise<ClientResponse> {
-    const res = await api.post<ClientResponse>('/clients/', body)
-    return res.data
-}
-
-async function updateClient(id: string, body: ClientUpdateRequest): Promise<ClientResponse> {
-    const res = await api.patch<ClientResponse>(`/clients/${id}`, body)
-    return res.data
-}
-
-type ClientFormValues = {
+/** UI-форма клиентов: дата — Dayjs|null */
+type ClientForm = {
     full_name?: string
     phone_number?: string
     date_of_birth?: Dayjs | null
 }
 
+async function fetchClients(search: string): Promise<ClientResponse[]> {
+    const res = await api.get<ClientResponse[]>('/clients/', { params: { search_substr: search } })
+    return res.data
+}
+async function createClient(body: ClientCreateRequest): Promise<ClientResponse> {
+    const res = await api.post<ClientResponse>('/clients/', body)
+    return res.data
+}
+async function updateClient(id: string, body: ClientUpdateRequest): Promise<ClientResponse> {
+    const res = await api.patch<ClientResponse>(`/clients/${id}`, body)
+    return res.data
+}
+
+const columns: ColumnsType<ClientResponse> = [
+    {
+        title: 'ФИО',
+        dataIndex: 'full_name',
+        render: (_: unknown, row: ClientResponse) => (
+            <EntityLink kind="clients" id={row.id} label={row.full_name} />
+        ),
+    },
+    { title: 'Телефон', dataIndex: 'phone_number' },
+    { title: 'Дата рождения', dataIndex: 'date_of_birth' },
+]
+
 export default function ClientsPage() {
-    const qc = useQueryClient()
-    const [search, setSearch] = useState('')
-    const [debounced, setDebounced] = useState('')
-    const [open, setOpen] = useState(false)
-    const [editing, setEditing] = useState<ClientResponse | null>(null)
-
-    const [form] = Form.useForm<ClientFormValues>()
-
-    useEffect(() => {
-        const t = setTimeout(() => setDebounced(search), 300)
-        return () => clearTimeout(t)
-    }, [search])
-
-    const {data, isLoading} = useQuery({
-        queryKey: ['clients', debounced],
-        queryFn: () => fetchClients(debounced),
-    })
-
-    const createMut = useMutation({
-        mutationFn: (b: ClientCreateRequest) => createClient(b),
-        onSuccess: () => {
-            message.success('Клиент создан')
-            qc.invalidateQueries({queryKey: ['clients']})
-            setOpen(false);
-            form.resetFields()
-        },
-        onError: (err: unknown) => message.error(getErrorMessage(err)),
-    })
-
-    const updateMut = useMutation({
-        mutationFn: (b: ClientUpdateRequest) => updateClient(editing!.id, b),
-        onSuccess: () => {
-            message.success('Сохранено')
-            qc.invalidateQueries({queryKey: ['clients']})
-            setOpen(false);
-            setEditing(null);
-            form.resetFields()
-        },
-        onError: (err: unknown) => message.error(getErrorMessage(err)),
-    })
-
-    const columns: ColumnsType<ClientResponse> = useMemo(() => [
-        {title: 'ФИО', dataIndex: 'full_name'},
-        {title: 'Телефон', dataIndex: 'phone_number'},
-        {title: 'Дата рождения', dataIndex: 'date_of_birth', render: (v: string) => v || '—'},
-        {
-            title: '',
-            width: 160,
-            render: (_, row) => (
-                <Button
-                    onClick={() => {
-                        setEditing(row);
-                        setOpen(true)
-                        // <<< ВАЖНО: явно укажем тип передаваемого объекта
-                        const editValues: Partial<ClientFormValues> = {
-                            full_name: row.full_name,
-                            phone_number: row.phone_number,
-                            date_of_birth: row.date_of_birth ? dayjs(row.date_of_birth) : null,
-                        }
-                        form.setFieldsValue(editValues)
-                    }}
-                >
-                    <Pencil className="w-5 h-5 text-blue-600" />
-                </Button>
-            ),
-        },
-    ], [form])
-
-    const onSubmit = async () => {
-        const v = await form.validateFields() // v: ClientFormValues
-        const dob = v.date_of_birth ? v.date_of_birth.format('YYYY-MM-DD') : undefined
-
-        if (editing) {
-            const payload: ClientUpdateRequest = {
-                full_name: v.full_name,
-                phone_number: v.phone_number,
-                date_of_birth: dob,
-            }
-            updateMut.mutate(payload)
-        } else {
-            const payload: ClientCreateRequest = {
-                full_name: v.full_name!,        // required
-                phone_number: v.phone_number!,  // required
-                date_of_birth: dob!,            // required
-            }
-            createMut.mutate(payload)
-        }
-    }
-
     return (
-        <div style={{maxWidth: 1100, margin: '0 auto'}}>
-            <Space style={{marginBottom: 16}}>
-                <Input placeholder="Поиск по ФИО/телефону" value={search} onChange={(e) => setSearch(e.target.value)}
-                       allowClear/>
-                <Button type="primary" onClick={() => {
-                    setEditing(null);
-                    setOpen(true);
-                    form.resetFields()
-                }}>
-                    Новый клиент
-                </Button>
-            </Space>
+        <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+            <h2>Клиенты</h2>
 
-            <Table rowKey="id" loading={isLoading} dataSource={data || []} columns={columns}/>
-
-            <Modal
-                title={editing ? 'Редактировать клиента' : 'Новый клиент'}
-                open={open}
-                onCancel={() => {
-                    setOpen(false);
-                    setEditing(null)
-                }}
-                onOk={onSubmit}
-                confirmLoading={createMut.isPending || updateMut.isPending}
-                okText="Сохранить"
-                cancelText="Отмена"
-            >
-                <Form form={form} layout="vertical">
-                    <Form.Item name="full_name" label="ФИО" rules={[{required: !editing, message: 'Укажи ФИО'}]}>
-                        <Input/>
-                    </Form.Item>
-                    <Form.Item name="phone_number" label="Телефон"
-                               rules={[{required: !editing, message: 'Укажи телефон'}]}>
-                        <Input/>
-                    </Form.Item>
-                    <Form.Item name="date_of_birth" label="Дата рождения"
-                               rules={[{required: !editing, message: 'Укажи дату рождения'}]}>
-                        <DatePicker style={{width: '100%'}}/>
-                    </Form.Item>
-                </Form>
-            </Modal>
+            <EntityManager<ClientResponse, ClientCreateRequest, ClientUpdateRequest, ClientForm>
+                title="клиент"
+                queryKey={['clients']}
+                fetchList={fetchClients}
+                createItem={createClient}
+                updateItem={updateClient}
+                columns={columns}
+                searchPlaceholder="Поиск по ФИО/телефону"
+                createButtonText="Новый клиент"
+                renderForm={() => (
+                    <>
+                        <Form.Item name="full_name" label="ФИО" rules={[{ required: true, message: 'Укажите ФИО' }]}>
+                            <Input />
+                        </Form.Item>
+                        <Form.Item name="phone_number" label="Телефон" rules={[{ required: true, message: 'Укажите телефон' }]}>
+                            <Input />
+                        </Form.Item>
+                        <Form.Item name="date_of_birth" label="Дата рождения" rules={[{ required: true, message: 'Укажите дату рождения' }]}>
+                            <DatePicker style={{ width: '100%' }} />
+                        </Form.Item>
+                    </>
+                )}
+                toForm={(item) => ({
+                    full_name: item.full_name,
+                    phone_number: item.phone_number,
+                    date_of_birth: item.date_of_birth ? dayjs(item.date_of_birth) : null,
+                })}
+                toCreate={(v) => ({
+                    full_name: v.full_name!,
+                    phone_number: v.phone_number!,
+                    date_of_birth: v.date_of_birth!.format('YYYY-MM-DD'),
+                })}
+                toUpdate={(v) => ({
+                    full_name: v.full_name,
+                    phone_number: v.phone_number,
+                    date_of_birth: v.date_of_birth ? v.date_of_birth.format('YYYY-MM-DD') : undefined,
+                })}
+            />
         </div>
     )
 }
