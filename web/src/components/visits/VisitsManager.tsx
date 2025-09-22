@@ -454,12 +454,16 @@ export default function VisitsManager({ context, show, defaultLimit = 30 }: Prop
                     }}
                 />
                 <RangePicker
-                    showTime
                     value={range ?? undefined}
                     onChange={(v) => {
-                        const both = v && v[0] && v[1] ? (v as [Dayjs, Dayjs]) : null
-                        setRange(both)
-                        if (both) setDay(null)
+                        if (v && v[0] && v[1]) {
+                            const start = v[0].startOf('day')
+                            const end = v[1].endOf('day')   // включительно до конца дня
+                            setRange([start, end])
+                            setDay(null)
+                        } else {
+                            setRange(null)
+                        }
                     }}
                 />
                 <InputNumber
