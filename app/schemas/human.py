@@ -7,9 +7,9 @@ from app.utils.common import split_full_name
 class HumanCreateRequest(BaseCreateRequest):
     full_name: str
 
-    name: str = ""
-    surname: str = ""
-    patronymic: str | None = ""
+    name: str | None = None
+    surname: str | None = None
+    patronymic: str | None = None
 
     @model_validator(mode="after")
     def split_name(self):

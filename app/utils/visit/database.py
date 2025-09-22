@@ -54,6 +54,7 @@ async def delete_visit_by_id(
         .where(Visit.id == visit_id)
     )
     await session.delete(visit)
+    await session.commit()
 
 
 async def get_visits_by_filter(

@@ -1,0 +1,86 @@
+import { DatePicker, Form, Input } from 'antd'
+import type { ColumnsType } from 'antd/es/table'
+import dayjs, { Dayjs } from 'dayjs'
+import EntityManager from '../components/EntityManager'
+import EntityLink from '../components/EntityLink'
+import { api } from '../lib/api'
+import type { ClientCreateRequest, ClientResponse, ClientUpdateRequest } from '../api'
+
+/** UI-форма клиентов: дата — Dayjs|null */
+type ClientForm = {
+    full_name?: string
+    phone_number?: string
+    date_of_birth?: Dayjs | null
+}
+
+async function fetchClients(search: string): Promise<ClientResponse[]> {
+    const res = await api.get<ClientResponse[]>('/clients/', { params: { search_substr: search } })
+    return res.data
+}
+async function createClient(body: ClientCreateRequest): Promise<ClientResponse> {
+    const res = await api.post<ClientResponse>('/clients/', body)
+    return res.data
+}
+async function updateClient(id: string, body: ClientUpdateRequest): Promise<ClientResponse> {
+    const res = await api.patch<ClientResponse>(`/clients/${id}`, body)
+    return res.data
+}
+
+const columns: ColumnsType<ClientResponse> = [
+    {
+        title: 'ФИО',
+        dataIndex: 'full_name',
+        render: (_: unknown, row: ClientResponse) => (
+            <EntityLink kind="clients" id={row.id} label={row.full_name} />
+        ),
+    },
+    { title: 'Телефон', dataIndex: 'phone_number' },
+    { title: 'Дата рождения', dataIndex: 'date_of_birth' },
+]
+
+export default function ClientsPage() {
+    return (
+        <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+            <h2>Клиенты</h2>
+
+            <EntityManager<ClientResponse, ClientCreateRequest, ClientUpdateRequest, ClientForm>
+                title="клиент"
+                queryKey={['clients']}
+                fetchList={fetchClients}
+                createItem={createClient}
+                updateItem={updateClient}
+                columns={columns}
+                searchPlaceholder="Поиск по ФИО/телефону"
+                createButtonText="Новый клиент"
+                renderForm={() => (
+                    <>
+                        <Form.Item name="full_name" label="ФИО" rules={[{ required: true, message: 'Укажите ФИО' }]}>
+                            <Input />
+                        </Form.Item>
+                        <Form.Item name="phone_number" label="Телефон" rules={[{ required: true, message: 'Укажите телефон' }]}>
+                            <Input />
+                        </Form.Item>
+                        <Form.Item name="date_of_birth" label="Дата рождения" rules={[{ required: true, message: 'Укажите дату рождения' }]}>
+                            <DatePicker style={{ width: '100%' }} />
+                        </Form.Item>
+                    </>
+                )}
+                toForm={(item) => ({
+                    full_name: item.full_name,
+                    phone_number: item.phone_number,
+                    date_of_birth: item.date_of_birth ? dayjs(item.date_of_birth) : null,
+                })}
+                toCreate={(v) => ({
+                    full_name: v.full_name!,
+                    phone_number: v.phone_number!,
+                    date_of_birth: v.date_of_birth!.format('YYYY-MM-DD'),
+                })}
+                toUpdate={(v) => ({
+                    full_name: v.full_name,
+                    phone_number: v.phone_number,
+                    date_of_birth: v.date_of_birth ? v.date_of_birth.format('YYYY-MM-DD') : undefined,
+                })}
+            />
+        </div>
+    )
+}

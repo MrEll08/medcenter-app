@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi_pagination import add_pagination
 from uvicorn import run
 
@@ -50,6 +51,13 @@ app = get_app()
 
 if __name__ == "__main__":
     settings_for_application = get_settings()
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["http://localhost:5173"],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
     run(
         "app.__main__:app",
         host=get_hostname(settings_for_application.APP_HOST),
