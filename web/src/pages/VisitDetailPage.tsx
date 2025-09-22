@@ -3,7 +3,10 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '../lib/api'
 import type { VisitResponse, VisitStatusEnum, VisitUpdateRequest } from '../api'
-import { Button, Card, Col, DatePicker, Form, Input, InputNumber, Modal, Row, Select, Space, Spin, Tag, Typography, message } from 'antd'
+import {
+    Button, Card, Col, DatePicker, Form, Input, InputNumber, Row, Select, Space, Spin, Tag, Typography, message,
+    Popconfirm
+} from 'antd'
 import type { Dayjs } from 'dayjs'
 import dayjs from 'dayjs'
 import { getErrorMessage } from '../lib/errors'
@@ -136,17 +139,6 @@ export default function VisitDetailPage() {
         updateMut.mutate(body)
     }
 
-    const onDelete = () => {
-        Modal.confirm({
-            title: 'Удалить визит?',
-            content: 'Действие необратимо.',
-            okText: 'Удалить',
-            okButtonProps: { danger: true },
-            cancelText: 'Отмена',
-            onOk: () => deleteMut.mutate(),
-        })
-    }
-
     if (isLoading || !visit) return <Spin />
 
     return (
@@ -165,9 +157,28 @@ export default function VisitDetailPage() {
                         <Button onClick={() => setEditing((e) => !e)} title="Редактировать">
                             <Pencil size={16} className="text-blue-600" />
                         </Button>
-                        <Button danger onClick={onDelete} loading={deleteMut.isPending} title="Удалить">
-                            <Trash2 size={16} className="text-red-600" />
-                        </Button>
+
+                        <Popconfirm
+                            title="Удалить визит?"
+                            okText="Удалить"
+                            cancelText="Отмена"
+                            okButtonProps={{ danger: true, loading: deleteMut.isPending }}
+                            onConfirm={(e) => {
+                                e?.stopPropagation?.()
+                                deleteMut.mutate()         // ← реально удаляем здесь
+                            }}
+                            onCancel={(e) => e?.stopPropagation?.()}
+                        >
+                            <Button
+                                danger
+                                loading={deleteMut.isPending}
+                                onClick={(e) => e.stopPropagation()} // чтобы не всплывало на родителя
+                                htmlType="button"
+                                title="Удалить"
+                            >
+                                <Trash2 size={16} className="text-red-600" />
+                            </Button>
+                        </Popconfirm>
                     </Space>
                 </Col>
             </Row>
