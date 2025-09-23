@@ -1,6 +1,6 @@
 import uuid
 
-from sqlalchemy import Sequence, select, update
+from sqlalchemy import Date, Sequence, Time, asc, cast, desc, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.models import Visit
@@ -61,7 +61,10 @@ async def get_visits_by_filter(
         session: AsyncSession,
         search_visit: VisitSearchRequest
 ) -> Sequence[Visit]:
-    query = select(Visit).limit(search_visit.search_limit)
+    query = select(Visit).order_by(
+        desc(cast(Visit.start_date, Date)),
+        asc(cast(Visit.start_date, Time))
+    ).limit(search_visit.search_limit)
     if search_visit.client_id:
         query = query.where(Visit.client_id == search_visit.client_id)
     if search_visit.doctor_id:
