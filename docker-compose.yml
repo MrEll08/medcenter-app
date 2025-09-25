@@ -1,14 +1,71 @@
 services:
   db:
-    container_name: 'medcenter_postgres'
+    container_name: medcenter_postgres
     image: 'postgres:14'
     restart: always
     env_file:
       - ./.env
     ports:
-      - '${POSTGRES_PORT}:${POSTGRES_PORT}'
+      - '${POSTGRES_PORT}:5432'
     volumes:
       - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -h localhost -U $${POSTGRES_USER:-postgres} -d postgres -p $${POSTGRES_PORT:-5432}" ]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  migrate:
+    build:
+      context: .
+      dockerfile: ./app/Dockerfile
+    env_file:
+      ./.env
+    environment:
+      POSTGRES_HOST: db
+      POSTGRES_POS: 5432
+    depends_on:
+      db:
+        condition: service_healthy
+    command: >
+      sh -c 'poetry run alembic -c app/db/alembic.ini upgrade head'
+    restart: "no"
+
+  api:
+    container_name: medcenter_api
+    build:
+      context: .
+      dockerfile: ./app/Dockerfile
+    env_file:
+      - ./.env
+    environment:
+      POSTGRES_HOST: db
+      POSTGRES_POS: 5432
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    volumes:
+      - ./app:/app/app:cached
+      - venv_cache:/app/.venv
+
+  web:
+    container_name: medcenter_web
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+    env_file:
+      - ./.env
+    environment:
+      VITE_API_URL: "http://api:8000"
+      CHOKIDAR_USEPOLLING: "true"
+    depends_on:
+      - api
+    volumes:
+      - ./web:/app/web:cached
+      - web_node_modules:/app/web/node_modules
+      - /app/web/.vite
 
 volumes:
   pg_data:
+  venv_cache:
+  web_node_modules:

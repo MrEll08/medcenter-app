@@ -1,0 +1,4 @@
+.idea
+.vite
+package-lock.json
+node_modules
