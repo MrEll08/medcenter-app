@@ -42,15 +42,15 @@ services:
     environment:
       POSTGRES_HOST: db
       POSTGRES_PORT: 5432
-      APP_HOST: "0.0.0.0"
-      APP_PORT: 8000
+      API_HOST: "0.0.0.0"
+      API_PORT: 8000
     depends_on:
       db:
         condition: service_healthy
       migrate:
         condition: service_completed_successfully
     ports:
-      - "${APP_PORT}:8000"
+      - "${API_PORT}:8000"
     restart: unless-stopped
     volumes:
       - ./app:/app/app:cached
@@ -64,10 +64,16 @@ services:
     env_file:
       - ./.env
     environment:
+      API_HOST: api
+      API_PORT: 8000
+      APP_HOST: "0.0.0.0"
+      APP_PORT: 5173
       VITE_API_URL: "http://api:8000"
       CHOKIDAR_USEPOLLING: "true"
     depends_on:
       - api
+    ports:
+      - "${APP_PORT}:5173"
     volumes:
       - ./web:/app/web:cached
       - web_node_modules:/app/web/node_modules

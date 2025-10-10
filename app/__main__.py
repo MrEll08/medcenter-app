@@ -60,8 +60,8 @@ if __name__ == "__main__":
     )
     run(
         "app.__main__:app",
-        host=get_hostname(settings_for_application.APP_HOST),
-        port=settings_for_application.APP_PORT,
+        host=get_hostname(settings_for_application.API_HOST),
+        port=settings_for_application.API_PORT,
         reload=True,
         reload_dirs=["app", "tests"],
         log_level="debug",
