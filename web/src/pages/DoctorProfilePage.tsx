@@ -55,9 +55,9 @@ export default function DoctorProfilePage() {
                     date: true,
                     startTime: true,
                     endTime: true,
-                    procedure: false,
+                    procedure: true,
                     status: true,
-                    cabinet: true,
+                    cabinet: false,
                     cost: true,
                     actions: true,
                 }}

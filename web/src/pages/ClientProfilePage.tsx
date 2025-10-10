@@ -57,9 +57,9 @@ export default function ClientProfilePage() {
                     date: true,
                     startTime: true,
                     endTime: true,
-                    procedure: false,
+                    procedure: true,
                     status: true,
-                    cabinet: true,
+                    cabinet: false,
                     cost: true,
                     actions: true,
                 }}

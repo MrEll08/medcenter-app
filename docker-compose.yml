@@ -2,7 +2,6 @@ services:
   db:
     container_name: medcenter_postgres
     image: 'postgres:14'
-    restart: always
     env_file:
       - ./.env
     ports:
@@ -10,10 +9,12 @@ services:
     volumes:
       - pg_data:/var/lib/postgresql/data
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -h localhost -U $${POSTGRES_USER:-postgres} -d postgres -p $${POSTGRES_PORT:-5432}" ]
+      test: [ "CMD-SHELL", "pg_isready -h localhost -U $${POSTGRES_USER:-postgres} -d postgres -p 5432" ]
       interval: 5s
       timeout: 3s
-      retries: 10
+      retries: 20
+      start_period: 10s
+    restart: unless-stopped
 
   migrate:
     build:
@@ -23,7 +24,7 @@ services:
       ./.env
     environment:
       POSTGRES_HOST: db
-      POSTGRES_POS: 5432
+      POSTGRES_PORT: 5432
     depends_on:
       db:
         condition: service_healthy
@@ -40,10 +41,17 @@ services:
       - ./.env
     environment:
       POSTGRES_HOST: db
-      POSTGRES_POS: 5432
+      POSTGRES_PORT: 5432
+      APP_HOST: "0.0.0.0"
+      APP_PORT: 8000
     depends_on:
+      db:
+        condition: service_healthy
       migrate:
         condition: service_completed_successfully
+    ports:
+      - "${APP_PORT}:8000"
+    restart: unless-stopped
     volumes:
       - ./app:/app/app:cached
       - venv_cache:/app/.venv
