@@ -22,7 +22,7 @@ class SessionManager:
         return sessionmaker(self.engine, class_=AsyncSession, expire_on_commit=False)
 
     def refresh(self) -> None:
-        self.engine = create_async_engine(get_settings().database_uri, echo=True, future=True)
+        self.engine = create_async_engine(get_settings().database_uri, echo=get_settings().DB_ECHO, future=True)
 
 
 async def get_session() -> AsyncSession:

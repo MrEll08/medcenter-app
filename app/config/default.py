@@ -27,6 +27,7 @@ class DefaultSettings(BaseSettings):
     POSTGRES_PASSWORD: str = environ.get("POSTGRES_PASSWORD", "hackme")
     DB_CONNECT_RETRY: int = environ.get("DB_CONNECT_RETRY", 20)
     DB_POOL_SIZE: int = environ.get("DB_POOL_SIZE", 15)
+    DB_ECHO: bool = environ.get("DB_ECHO", False)
 
     # to get a string like this run: "openssl rand -hex 32"
     SECRET_KEY: str = environ.get("SECRET_KEY", secrets.token_hex(32))
