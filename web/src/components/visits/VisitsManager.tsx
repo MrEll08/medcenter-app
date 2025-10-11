@@ -131,6 +131,89 @@ export default function VisitsManager({context, show, defaultLimit = 30}: Props)
     const [limit, setLimit] = useState<number>(defaultLimit)
     const isDayMode = !!day && !range
 
+    // === Минимум/максимум времени из env ===
+    const MIN_TIME = (import.meta.env.VITE_MIN_TIME as string) || '06:30'
+    const MAX_TIME = (import.meta.env.VITE_MAX_TIME as string) || '21:30'
+
+    function parseHHMM(s: string): { h: number; m: number } {
+        const m = /^(\d{1,2}):(\d{2})$/.exec((s ?? '').trim())
+        if (!m) return {h: 0, m: 0}
+        return {h: Number(m[1]), m: Number(m[2])}
+    }
+
+    // === Типы для «белых» строк ===
+    type GapRow = {
+        __gap: true
+        id: string
+        start_date: string
+        end_date: string
+    }
+    type RowData = VisitResponse | GapRow
+
+    function isGap(row: unknown): row is GapRow {
+        return typeof row === 'object' && row !== null && '__gap' in row && (row as GapRow).__gap
+    }
+
+
+    // === Построение строк дня с «щелями» ===
+    function buildDayRows(day: Dayjs, visits: VisitResponse[], minTime: string, maxTime: string): RowData[] {
+        const {h: minH, m: minM} = parseHHMM(minTime)
+        const {h: maxH, m: maxM} = parseHHMM(maxTime)
+
+        const dayMin = day.startOf('day').hour(minH).minute(minM).second(0).millisecond(0)
+        const dayMax = day.startOf('day').hour(maxH).minute(maxM).second(0).millisecond(0)
+
+        const sorted = [...(visits || [])].sort((a, b) =>
+            dayjs(a.start_date).valueOf() - dayjs(b.start_date).valueOf()
+        )
+
+        // Если приёмов нет — одна белая строка min–max
+        if (sorted.length === 0) {
+            return [{
+                __gap: true,
+                id: `gap-${dayMin.toISOString()}-${dayMax.toISOString()}`,
+                start_date: dayMin.toISOString(),
+                end_date: dayMax.toISOString(),
+            }]
+        }
+
+        const rows: RowData[] = []
+        let cursor = dayMin
+
+        for (const v of sorted) {
+            const vs = dayjs(v.start_date)
+            const ve = v.end_date ? dayjs(v.end_date) : vs
+
+            // Щель до приёма
+            if (vs.isAfter(cursor)) {
+                rows.push({
+                    __gap: true,
+                    id: `gap-${cursor.toISOString()}-${vs.toISOString()}`,
+                    start_date: cursor.toISOString(),
+                    end_date: vs.toISOString(),
+                })
+            }
+
+            // Сам приём
+            rows.push(v)
+
+            // Сдвинуть курсор
+            if (ve.isAfter(cursor)) cursor = ve
+        }
+
+        // Хвост до max
+        if (dayMax.isAfter(cursor)) {
+            rows.push({
+                __gap: true,
+                id: `gap-${cursor.toISOString()}-${dayMax.toISOString()}`,
+                start_date: cursor.toISOString(),
+                end_date: dayMax.toISOString(),
+            })
+        }
+
+        return rows
+    }
+
     const [printOpen, setPrintOpen] = useState(false)
     const [printCols, setPrintCols] = useState<PrintColumnKey[]>(
         context?.doctorId
@@ -166,6 +249,13 @@ export default function VisitsManager({context, show, defaultLimit = 30}: Props)
         queryKey: ['visits', params],
         queryFn: () => fetchVisits(params),
     })
+
+    const tableData: RowData[] = useMemo(() => {
+        if (!isDayMode) return (data || []) as RowData[]
+        if (!day) return []
+        return buildDayRows(day, data || [], MIN_TIME, MAX_TIME)
+    }, [isDayMode, day, data])
+
 
     useEffect(() => {
         if (!printOpen || !data) return
@@ -262,123 +352,194 @@ export default function VisitsManager({context, show, defaultLimit = 30}: Props)
     })
 
     // -------- Колонки --------
-    const columns: ColumnsType<VisitResponse> = []
-
+    let totalCols = 0
+    const columns: ColumnsType<VisitResponse | GapRow> = []
     if (!isDayMode && show?.date !== false) {
         columns.push({
             title: 'Дата',
             dataIndex: 'start_date',
-            render: (iso: string) => dayjs(iso).format('YYYY-MM-DD'),
+            render: (iso: string, row: VisitResponse | GapRow) =>
+                isGap(row)
+                    ? {children: null, props: {colSpan: 0}}
+                    : dayjs(iso).format('YYYY-MM-DD'),
         })
     }
     columns.push({
         title: 'Время',
         key: 'time',
-        width: 100, // узкий столбец
-        render: (row) => {
+        width: 100,
+        render: (row: VisitResponse | GapRow) => {
             const start = dayjs(row.start_date).format('HH:mm')
             const end = row.end_date ? dayjs(row.end_date).format('HH:mm') : ''
-            return end ? `${start}–${end}` : start
+            const label = end ? `${start}–${end}` : start
+
+            if (isGap(row)) {
+                return {
+                    children: (
+                        <div
+                            style={{
+                                textAlign: 'center',
+                                color: '#8c8c8c',
+                                fontStyle: 'italic',
+                                padding: 4,
+                            }}
+                        >
+                            {label}
+                        </div>
+                    ),
+                    props: {colSpan: totalCols || 1},
+                }
+            }
+            return label
         },
     })
     if (show?.client !== false && !context?.clientId) {
         columns.push({
             title: 'Пациент',
             key: 'client',
-            render: (row) => <EntityLink kind="clients" id={row.client_id} label={row.client_name}/>,
+            render: (_: unknown, row: VisitResponse | GapRow) =>
+                isGap(row)
+                    ? {children: null, props: {colSpan: 0}}
+                    : (
+                        <EntityLink
+                            kind="clients"
+                            id={(row as VisitResponse).client_id}
+                            label={(row as VisitResponse).client_name}
+                        />
+                    ),
         })
     }
     if (show?.doctor !== false && !context?.doctorId) {
         columns.push({
             title: 'Врач',
             key: 'doctor',
-            render: (row) => <EntityLink kind="doctors" id={row.doctor_id} label={row.doctor_name}/>,
+            render: (_: unknown, row: VisitResponse | GapRow) =>
+                isGap(row)
+                    ? {children: null, props: {colSpan: 0}}
+                    : (
+                        <EntityLink
+                            kind="doctors"
+                            id={(row as VisitResponse).doctor_id}
+                            label={(row as VisitResponse).doctor_name}
+                        />
+                    ),
         })
     }
     if (show?.procedure !== false) {
         columns.push({
             title: 'Услуга',
             dataIndex: 'procedure',
-            render: (v?: string | null) => v ?? '—',
             ellipsis: true,
+            render: (v: string | null | undefined, row: VisitResponse | GapRow) =>
+                isGap(row)
+                    ? {children: null, props: {colSpan: 0}}
+                    : (v ?? '—'),
         })
     }
     if (show?.cabinet !== false) {
-        columns.push({title: 'Кабинет', dataIndex: 'cabinet', render: (v?: string | null) => v ?? '—'})
+        columns.push({
+            title: 'Кабинет',
+            dataIndex: 'cabinet',
+            render: (v: string | null | undefined, row: VisitResponse | GapRow) =>
+                isGap(row)
+                    ? {children: null, props: {colSpan: 0}}
+                    : (v ?? '—'),
+        })
     }
     if (show?.cost !== false) {
-        columns.push({title: 'Стоимость', dataIndex: 'cost', render: (v?: number | null) => v ?? '—'})
+        columns.push({
+            title: 'Стоимость',
+            dataIndex: 'cost',
+            render: (v: number | null | undefined, row: VisitResponse | GapRow) =>
+                isGap(row)
+                    ? {children: null, props: {colSpan: 0}}
+                    : (v ?? '—'),
+        })
     }
     if (show?.status !== false) {
         columns.push({
             title: 'Статус',
             dataIndex: 'status',
-            render: (s: VisitStatusEnum) => <Tag>{s}</Tag>,
+            render: (s: VisitStatusEnum, row: VisitResponse | GapRow) =>
+                isGap(row)
+                    ? {children: null, props: {colSpan: 0}}
+                    : <Tag>{s}</Tag>,
         })
     }
     if (show?.actions !== false) {
         columns.push({
             title: 'Действия',
             width: 240,
-            render: (_, row) => (
-                <Space>
-                    <Button
-                        className="p-1 rounded-full bg-blue-50 hover:bg-blue-100 text-blue-600"
-                        onClick={() => navigate(`/visits/${row.id}`)}
-                        title="Информация о посещении"
-                    >
-                        <Info size={16} color="#2563eb"/>
-                    </Button>
+            render: (_: unknown, row: VisitResponse | GapRow) => {
+                if (isGap(row)) return {children: null, props: {colSpan: 0}}
 
-                    <Button
-                        className="p-1 rounded-lg hover:bg-gray-100"
-                        title="Редактировать"
-                        onClick={() => {
-                            setEditing(row)
-                            setOpen(true)
-                            const start = dayjs(row.start_date)
-                            const end = dayjs(row.end_date)
-                            form.setFieldsValue({
-                                client_id: context?.clientId ?? row.client_id,
-                                doctor_id: context?.doctorId ?? row.doctor_id,
-                                date: start,
-                                time_start: start,
-                                time_end: end,
-                                procedure: row.procedure ?? undefined,
-                                cabinet: row.cabinet ?? undefined,
-                                cost: typeof row.cost === 'number' ? row.cost : undefined,
-                                status: row.status,
-                            })
-                        }}
-                    >
-                        <Pencil size={16} className="text-blue-600"/>
-                    </Button>
-
-                    <Popconfirm
-                        title="Удалить посещение?"
-                        okText="Удалить"
-                        cancelText="Отмена"
-                        okButtonProps={{danger: true, loading: deleteMut.isPending}}
-                        onConfirm={(e) => {
-                            e?.stopPropagation?.()
-                            deleteMut.mutate(row.id)
-                        }}
-                        onCancel={(e) => e?.stopPropagation?.()}
-                    >
+                const v = row as VisitResponse
+                return (
+                    <Space>
                         <Button
-                            danger
-                            loading={deleteMut.isPending}
-                            onClick={(e) => e.stopPropagation()}
-                            className="p-1 rounded-lg hover:bg-gray-100"
-                            title="Удалить"
+                            className="p-1 rounded-full bg-blue-50 hover:bg-blue-100 text-blue-600"
+                            onClick={() => navigate(`/visits/${v.id}`)}
+                            title="Информация о посещении"
                         >
-                            <Trash2 size={16} className="text-red-600"/>
+                            <Info size={16} color="#2563eb"/>
                         </Button>
-                    </Popconfirm>
-                </Space>
-            ),
+
+                        <Button
+                            className="p-1 rounded-lg hover:bg-gray-100"
+                            title="Редактировать"
+                            onClick={() => {
+                                setEditing(v)
+                                setOpen(true)
+                                const start = dayjs(v.start_date)
+                                const end = dayjs(v.end_date)
+                                form.setFieldsValue({
+                                    client_id: context?.clientId ?? v.client_id,
+                                    doctor_id: context?.doctorId ?? v.doctor_id,
+                                    date: start,
+                                    time_start: start,
+                                    time_end: end,
+                                    procedure: v.procedure ?? undefined,
+                                    cabinet: v.cabinet ?? undefined,
+                                    cost:
+                                        typeof v.cost === 'number' ? v.cost : undefined,
+                                    status: v.status,
+                                })
+                            }}
+                        >
+                            <Pencil size={16} className="text-blue-600"/>
+                        </Button>
+
+                        <Popconfirm
+                            title="Удалить посещение?"
+                            okText="Удалить"
+                            cancelText="Отмена"
+                            okButtonProps={{
+                                danger: true,
+                                loading: deleteMut.isPending,
+                            }}
+                            onConfirm={(e) => {
+                                e?.stopPropagation?.()
+                                deleteMut.mutate(v.id)
+                            }}
+                            onCancel={(e) => e?.stopPropagation?.()}
+                        >
+                            <Button
+                                danger
+                                loading={deleteMut.isPending}
+                                onClick={(e) => e.stopPropagation()}
+                                className="p-1 rounded-lg hover:bg-gray-100"
+                                title="Удалить"
+                            >
+                                <Trash2 size={16} className="text-red-600"/>
+                            </Button>
+                        </Popconfirm>
+                    </Space>
+                )
+            },
         })
     }
+    totalCols = columns.length
+
 
     // -------- Сабмит формы --------
     const onSubmit = async () => {
@@ -499,7 +660,12 @@ export default function VisitsManager({context, show, defaultLimit = 30}: Props)
                 </Button>
             </Space>
 
-            <Table<VisitResponse> rowKey="id" loading={isLoading} dataSource={data || []} columns={columns}/>
+            <Table<VisitResponse | GapRow>
+                rowKey={(r) => (isGap(r) ? r.id : (r as VisitResponse).id)}
+                loading={isLoading}
+                dataSource={tableData}
+                columns={columns}
+            />
 
             <Modal
                 title={editing ? 'Редактировать посещение' : 'Новое посещение'}
