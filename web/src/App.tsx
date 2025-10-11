@@ -17,9 +17,9 @@ export default function App() {
                     selectedKeys={selected}
                     disabledOverflow
                     items={[
-                        { key: '/doctors', label: <Link to="/doctors">Доктора</Link> },
-                        { key: '/clients', label: <Link to="/clients">Клиенты</Link> },
-                        { key: '/visits', label: <Link to="/visits">Визиты</Link> },
+                        { key: '/doctors', label: <Link to="/doctors">Врачи</Link> },
+                        { key: '/clients', label: <Link to="/clients">Пациенты</Link> },
+                        { key: '/visits', label: <Link to="/visits">Посещения</Link> },
                     ]}
                 />
             </Header>

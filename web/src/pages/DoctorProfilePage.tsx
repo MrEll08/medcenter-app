@@ -45,12 +45,12 @@ export default function DoctorProfilePage() {
                 )}
             </Card>
 
-            <Typography.Title level={4} style={{ marginTop: 0 }}>Визиты врача</Typography.Title>
+            <Typography.Title level={4} style={{ marginTop: 0 }}>Посещения у этого врача</Typography.Title>
 
             <VisitsManager
                 context={{ doctorId: id }}
                 show={{
-                    doctor: false,     // на странице врача столбец «Доктор» не нужен
+                    doctor: false,     // на странице врача столбец «Врач» не нужен
                     client: true,
                     date: true,
                     startTime: true,

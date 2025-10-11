@@ -11,10 +11,10 @@ export type PrintColumnKey =
 export const PRINT_HEADERS: Record<PrintColumnKey, string> = {
     date: 'Дата',
     time: 'Время',
-    client: 'Клиент',
+    client: 'Пациент',
     doctor: 'Врач',
     cabinet: 'Кабинет',
-    procedure: 'Процедура',
+    procedure: 'Услуга',
     status: 'Статус',
     cost: 'Стоимость',
 }

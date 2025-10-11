@@ -5,11 +5,11 @@ export default function VisitsPage() {
     return (
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
             <Typography.Title level={3} style={{ marginBottom: 16 }}>
-                Все визиты
+                Все посещения
             </Typography.Title>
 
             <VisitsManager
-                // без контекста — показываем всё, включая столбцы «Клиент» и «Доктор»
+                // без контекста — показываем всё, включая столбцы «Пациент» и «Врач»
                 context={undefined}
                 show={{
                     // можно явно зафиксировать нужные колонки (все true по умолчанию)

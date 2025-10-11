@@ -6,7 +6,7 @@ import EntityLink from '../components/EntityLink'
 import { api } from '../lib/api'
 import type { ClientCreateRequest, ClientResponse, ClientUpdateRequest } from '../api'
 
-/** UI-форма клиентов: дата — Dayjs|null */
+/** UI-форма пациентов: дата — Dayjs|null */
 type ClientForm = {
     full_name?: string
     phone_number?: string
@@ -41,17 +41,17 @@ const columns: ColumnsType<ClientResponse> = [
 export default function ClientsPage() {
     return (
         <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-            <h2>Клиенты</h2>
+            <h2>Пациенты</h2>
 
             <EntityManager<ClientResponse, ClientCreateRequest, ClientUpdateRequest, ClientForm>
-                title="клиент"
+                title="пациент"
                 queryKey={['clients']}
                 fetchList={fetchClients}
                 createItem={createClient}
                 updateItem={updateClient}
                 columns={columns}
                 searchPlaceholder="Поиск по ФИО/телефону"
-                createButtonText="Новый клиент"
+                createButtonText="Новый пациент"
                 renderForm={() => (
                     <>
                         <Form.Item name="full_name" label="ФИО" rules={[{ required: true, message: 'Укажите ФИО' }]}>

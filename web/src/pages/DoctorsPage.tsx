@@ -37,17 +37,17 @@ const columns: ColumnsType<DoctorResponse> = [
 export default function DoctorsPage() {
     return (
         <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-            <h2>Доктора</h2>
+            <h2>Врачи</h2>
 
             <EntityManager<DoctorResponse, DoctorCreateRequest, DoctorUpdateRequest, DoctorForm>
-                title="доктор"
+                title="врач"
                 queryKey={['doctors']}
                 fetchList={fetchDoctors}
                 createItem={createDoctor}
                 updateItem={updateDoctor}
                 columns={columns}
                 searchPlaceholder="Поиск по ФИО/телефону"
-                createButtonText="Новый доктор"
+                createButtonText="Новый врач"
                 renderForm={() => (
                     <>
                         <Form.Item name="full_name" label="ФИО" rules={[{ required: true, message: 'Укажите ФИО' }]}>

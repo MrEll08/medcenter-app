@@ -77,14 +77,14 @@ export default function VisitDetailPage() {
     const deleteMut = useMutation({
         mutationFn: () => deleteVisit(id!),
         onSuccess: () => {
-            message.success('Визит удалён')
-            // Можно вернуть на список визитов
+            message.success('Посещение удалено')
+            // Можно вернуть на список посещений
             navigate('/visits')
         },
         onError: (err: unknown) => message.error(getErrorMessage(err)),
     })
 
-    // Инициализируем форму при загрузке визита
+    // Инициализируем форму при загрузке посещения
     useEffect(() => {
         if (!visit) return
         const start = dayjs(visit.start_date)
@@ -149,7 +149,7 @@ export default function VisitDetailPage() {
                 </Col>
                 <Col flex="auto">
                     <Typography.Title level={3} style={{ margin: 0 }}>
-                        Визит от {headerDate}
+                        Посещение от {headerDate}
                     </Typography.Title>
                 </Col>
                 <Col flex="none">
@@ -159,7 +159,7 @@ export default function VisitDetailPage() {
                         </Button>
 
                         <Popconfirm
-                            title="Удалить визит?"
+                            title="Удалить посещение?"
                             okText="Удалить"
                             cancelText="Отмена"
                             okButtonProps={{ danger: true, loading: deleteMut.isPending }}
@@ -186,10 +186,10 @@ export default function VisitDetailPage() {
             <Card style={{ marginBottom: 16 }}>
                 <Row gutter={[16, 8]}>
                     <Col xs={24} md={12}>
-                        <div><b>Клиент:</b> <EntityLink kind="clients" id={visit.client_id} label={visit.client_name} /></div>
+                        <div><b>Пациент:</b> <EntityLink kind="clients" id={visit.client_id} label={visit.client_name} /></div>
                     </Col>
                     <Col xs={24} md={12}>
-                        <div><b>Доктор:</b> <EntityLink kind="doctors" id={visit.doctor_id} label={visit.doctor_name} /></div>
+                        <div><b>Врач:</b> <EntityLink kind="doctors" id={visit.doctor_id} label={visit.doctor_name} /></div>
                     </Col>
                     <Col xs={24} md={8}><div><b>Дата:</b> {dayjs(visit.start_date).format('YYYY-MM-DD')}</div></Col>
                     <Col xs={24} md={8}><div><b>Начало:</b> {dayjs(visit.start_date).format('HH:mm')}</div></Col>
@@ -197,7 +197,7 @@ export default function VisitDetailPage() {
                     <Col xs={24} md={8}><div><b>Статус:</b> <Tag>{visit.status}</Tag></div></Col>
                     <Col xs={24} md={8}><div><b>Кабинет:</b> {visit.cabinet ?? '—'}</div></Col>
                     <Col xs={24} md={8}><div><b>Стоимость:</b> {visit.cost ?? '—'}</div></Col>
-                    <Col xs={24}><div><b>Процедура:</b> {visit.procedure ?? '—'}</div></Col>
+                    <Col xs={24}><div><b>Услуга:</b> {visit.procedure ?? '—'}</div></Col>
                 </Row>
             </Card>
 
@@ -206,12 +206,12 @@ export default function VisitDetailPage() {
             <Form form={form} layout="vertical" disabled={!editing}>
                 <Row gutter={[16, 0]}>
                     <Col xs={24} md={12}>
-                        <Form.Item name="client_id" label="Клиент" rules={[{ required: true, message: 'Выберите клиента' }]}>
+                        <Form.Item name="client_id" label="Пациент" rules={[{ required: true, message: 'Выберите пациента' }]}>
                             <EntitySelect entity="clients" />
                         </Form.Item>
                     </Col>
                     <Col xs={24} md={12}>
-                        <Form.Item name="doctor_id" label="Доктор" rules={[{ required: true, message: 'Выберите доктора' }]}>
+                        <Form.Item name="doctor_id" label="Врач" rules={[{ required: true, message: 'Выберите врача' }]}>
                             <EntitySelect entity="doctors" />
                         </Form.Item>
                     </Col>
@@ -233,7 +233,7 @@ export default function VisitDetailPage() {
                     </Col>
 
                     <Col xs={24} md={12}>
-                        <Form.Item name="procedure" label="Процедура">
+                        <Form.Item name="procedure" label="Услуга">
                             <Input />
                         </Form.Item>
                     </Col>

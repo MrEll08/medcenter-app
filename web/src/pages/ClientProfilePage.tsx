@@ -29,7 +29,7 @@ export default function ClientProfilePage() {
                 </Col>
                 <Col flex="auto">
                     <Typography.Title level={3} style={{ margin: 0 }}>
-                        Профиль клиента
+                        Профиль пациента
                     </Typography.Title>
                 </Col>
             </Row>
@@ -46,13 +46,13 @@ export default function ClientProfilePage() {
                 )}
             </Card>
 
-            <Typography.Title level={4} style={{ marginTop: 0 }}>Визиты</Typography.Title>
+            <Typography.Title level={4} style={{ marginTop: 0 }}>Посещения</Typography.Title>
 
             <VisitsManager
                 context={{ clientId: id }}
                 // можно тонко настраивать отображение:
                 show={{
-                    client: false,        // на странице клиента столбец «Клиент» не нужен
+                    client: false,        // на странице пациента столбец «Пациент» не нужен
                     doctor: true,
                     date: true,
                     startTime: true,

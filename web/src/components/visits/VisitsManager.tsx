@@ -134,7 +134,7 @@ export default function VisitsManager({ context, show, defaultLimit = 30 }: Prop
         context?.doctorId
             ? ['time', 'client', 'cabinet', 'procedure']      // дефолт для врача
             : context?.clientId
-                ? ['date', 'time', 'doctor', 'cabinet', 'procedure'] // дефолт для клиента
+                ? ['date', 'time', 'doctor', 'cabinet', 'procedure'] // дефолт для пациента
                 : ['date', 'time', 'client', 'doctor', 'cabinet', 'procedure', 'status', 'cost'] // общий
     )
 
@@ -187,8 +187,8 @@ export default function VisitsManager({ context, show, defaultLimit = 30 }: Prop
 
     const printTitle =
         context?.doctorId ? (doctorsMap[context.doctorId!]?.full_name ?? 'Врач') :
-            context?.clientId ? (clientsMap[context.clientId!]?.full_name ?? 'Клиент') :
-                'Все визиты'
+            context?.clientId ? (clientsMap[context.clientId!]?.full_name ?? 'Пациент') :
+                'Все посещения'
 
     const printSubtitle =
         context?.doctorId ? (doctorsMap[context.doctorId!]?.speciality ?? '') :
@@ -210,13 +210,13 @@ export default function VisitsManager({ context, show, defaultLimit = 30 }: Prop
         else if (range) parts.push(`Период: ${range[0].format('YYYY-MM-DD HH:mm')} – ${range[1].format('YYYY-MM-DD HH:mm')}`)
         if (status) parts.push(`Статус: ${status}`)
         if (cabinet) parts.push(`Кабинет: ${cabinet}`)
-        if (procedure) parts.push(`Процедура: ${procedure}`)
+        if (procedure) parts.push(`Услуга: ${procedure}`)
         return parts.join(' · ')
     })()
 
     const doPrint = useReactToPrint({
         contentRef: printRef,                               // ✅ вместо content
-        documentTitle: `${printTitle} — визиты`,
+        documentTitle: `${printTitle} — посещения`,
         pageStyle: '@page { size: auto; margin: 20mm; }',
         onAfterPrint: () => console.log('Печать завершена'),
         // preserveAfterPrint: false, // по умолчанию и так false
@@ -230,7 +230,7 @@ export default function VisitsManager({ context, show, defaultLimit = 30 }: Prop
     const createMut = useMutation({
         mutationFn: (b: VisitCreateRequest) => createVisit(b),
         onSuccess: () => {
-            message.success('Визит создан')
+            message.success('Посещение добавлено')
             qc.invalidateQueries({ queryKey: ['visits'] })
             setOpen(false)
             form.resetFields()
@@ -285,21 +285,21 @@ export default function VisitsManager({ context, show, defaultLimit = 30 }: Prop
     }
     if (show?.client !== false && !context?.clientId) {
         columns.push({
-            title: 'Клиент',
+            title: 'Пациент',
             key: 'client',
             render: (row) => <EntityLink kind="clients" id={row.client_id} label={row.client_name} />,
         })
     }
     if (show?.doctor !== false && !context?.doctorId) {
         columns.push({
-            title: 'Доктор',
+            title: 'Врач',
             key: 'doctor',
             render: (row) => <EntityLink kind="doctors" id={row.doctor_id} label={row.doctor_name} />,
         })
     }
     if (show?.procedure !== false) {
         columns.push({
-            title: 'Процедура',
+            title: 'Услуга',
             dataIndex: 'procedure',
             render: (v?: string | null) => v ?? '—',
             ellipsis: true,
@@ -327,7 +327,7 @@ export default function VisitsManager({ context, show, defaultLimit = 30 }: Prop
                     <Button
                         className="p-1 rounded-full bg-blue-50 hover:bg-blue-100 text-blue-600"
                         onClick={() => navigate(`/visits/${row.id}`)}
-                        title="Открыть визит"
+                        title="Информация о посещении"
                     >
                         <Info size={16} color="#2563eb"/>
                     </Button>
@@ -357,7 +357,7 @@ export default function VisitsManager({ context, show, defaultLimit = 30 }: Prop
                     </Button>
 
                     <Popconfirm
-                        title="Удалить визит?"
+                        title="Удалить посещение?"
                         okText="Удалить"
                         cancelText="Отмена"
                         okButtonProps={{ danger: true, loading: deleteMut.isPending }}
@@ -426,10 +426,10 @@ export default function VisitsManager({ context, show, defaultLimit = 30 }: Prop
             {/* Фильтры */}
             <Space wrap style={{ marginBottom: 16 }}>
                 {!context?.clientId && (
-                    <EntitySelect entity="clients" value={clientId} onChange={setClientId} placeholder="Клиент" allowClear />
+                    <EntitySelect entity="clients" value={clientId} onChange={setClientId} placeholder="Пациент" allowClear />
                 )}
                 {!context?.doctorId && (
-                    <EntitySelect entity="doctors" value={doctorId} onChange={setDoctorId} placeholder="Доктор" allowClear />
+                    <EntitySelect entity="doctors" value={doctorId} onChange={setDoctorId} placeholder="Врач" allowClear />
                 )}
                 <Select
                     allowClear
@@ -443,7 +443,7 @@ export default function VisitsManager({ context, show, defaultLimit = 30 }: Prop
                     <Input placeholder="Кабинет" value={cabinet} onChange={(e) => setCabinet(e.target.value || undefined)} />
                 )}
                 {show?.procedure !== false && (
-                    <Input placeholder="Процедура" value={procedure} onChange={(e) => setProcedure(e.target.value || undefined)} />
+                    <Input placeholder="Услуга" value={procedure} onChange={(e) => setProcedure(e.target.value || undefined)} />
                 )}
                 <DatePicker
                     placeholder="День"
@@ -493,14 +493,14 @@ export default function VisitsManager({ context, show, defaultLimit = 30 }: Prop
                         })
                     }}
                 >
-                    Новый визит
+                    Новое посещение
                 </Button>
             </Space>
 
             <Table<VisitResponse> rowKey="id" loading={isLoading} dataSource={data || []} columns={columns} />
 
             <Modal
-                title={editing ? 'Редактировать визит' : 'Новый визит'}
+                title={editing ? 'Редактировать посещение' : 'Новое посещение'}
                 open={open}
                 onCancel={() => { setOpen(false); setEditing(null) }}
                 onOk={onSubmit}
@@ -510,12 +510,12 @@ export default function VisitsManager({ context, show, defaultLimit = 30 }: Prop
             >
                 <Form form={form} layout="vertical">
                     {!context?.clientId && (
-                        <Form.Item name="client_id" label="Клиент" rules={[{ required: !editing, message: 'Выберите клиента' }]}>
+                        <Form.Item name="client_id" label="Пациент" rules={[{ required: !editing, message: 'Выберите пациента' }]}>
                             <EntitySelect entity="clients" />
                         </Form.Item>
                     )}
                     {!context?.doctorId && (
-                        <Form.Item name="doctor_id" label="Доктор" rules={[{ required: !editing, message: 'Выберите доктора' }]}>
+                        <Form.Item name="doctor_id" label="Врач" rules={[{ required: !editing, message: 'Выберите врача' }]}>
                             <EntitySelect entity="doctors" />
                         </Form.Item>
                     )}
@@ -533,7 +533,7 @@ export default function VisitsManager({ context, show, defaultLimit = 30 }: Prop
                         </Form.Item>
                     </Space>
 
-                    <Form.Item name="procedure" label="Процедура">
+                    <Form.Item name="procedure" label="Услуга">
                         <Input />
                     </Form.Item>
                     <Form.Item name="cabinet" label="Кабинет">
