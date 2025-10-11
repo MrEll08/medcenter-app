@@ -32,6 +32,7 @@ class VisitResponse(BaseResponse):
     status: VisitStatusEnum
 
     client_name: str
+    client_phone_number: str
     doctor_name: str
 
 

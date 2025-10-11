@@ -70,5 +70,9 @@ class Visit(Base):
         return self.client.full_name if self.client else None
 
     @property
+    def client_phone_number(self) -> str | None:
+        return self.client.phone_number if self.client else None
+
+    @property
     def doctor_name(self) -> str | None:
         return self.doctor.full_name if self.doctor else None

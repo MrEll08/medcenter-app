@@ -397,16 +397,23 @@ export default function VisitsManager({context, show, defaultLimit = 30}: Props)
         columns.push({
             title: 'Пациент',
             key: 'client',
-            render: (_: unknown, row: VisitResponse | GapRow) =>
-                isGap(row)
-                    ? {children: null, props: {colSpan: 0}}
-                    : (
-                        <EntityLink
-                            kind="clients"
-                            id={(row as VisitResponse).client_id}
-                            label={(row as VisitResponse).client_name}
-                        />
-                    ),
+            render: (_: unknown, row: VisitResponse | GapRow) => {
+                if (isGap(row)) {
+                    return {children: null, props: {colSpan: 0}}
+                }
+
+                const v = row as VisitResponse
+                return (
+                    <div style={{display: 'flex', flexDirection: 'column', lineHeight: 1.3}}>
+                        <EntityLink kind="clients" id={v.client_id} label={v.client_name}/>
+                        {v.client_phone_number && (
+                            <span style={{color: '#8c8c8c', fontSize: 12}}>
+                                {v.client_phone_number}
+                            </span>
+                        )}
+                    </div>
+                )
+            },
         })
     }
     if (show?.doctor !== false && !context?.doctorId) {
