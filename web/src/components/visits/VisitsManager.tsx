@@ -280,7 +280,7 @@ export default function VisitsManager({context, show, defaultLimit = 30}: Props)
     const printTitle =
         context?.doctorId ? (doctorsMap[context.doctorId!]?.full_name ?? 'Врач') :
             context?.clientId ? (clientsMap[context.clientId!]?.full_name ?? 'Пациент') :
-                'Все посещения'
+                'Все приёмы'
 
     const printSubtitle =
         context?.doctorId ? (doctorsMap[context.doctorId!]?.speciality ?? '') :
@@ -308,7 +308,7 @@ export default function VisitsManager({context, show, defaultLimit = 30}: Props)
 
     const doPrint = useReactToPrint({
         contentRef: printRef,                               // ✅ вместо content
-        documentTitle: `${printTitle} — посещения`,
+        documentTitle: `${printTitle} — приёмы`,
         pageStyle: '@page { size: auto; margin: 20mm; }',
         onAfterPrint: () => console.log('Печать завершена'),
         // preserveAfterPrint: false, // по умолчанию и так false
@@ -322,7 +322,7 @@ export default function VisitsManager({context, show, defaultLimit = 30}: Props)
     const createMut = useMutation({
         mutationFn: (b: VisitCreateRequest) => createVisit(b),
         onSuccess: () => {
-            message.success('Посещение добавлено')
+            message.success('Приём добавлено')
             qc.invalidateQueries({queryKey: ['visits']})
             setOpen(false)
             form.resetFields()
@@ -367,7 +367,7 @@ export default function VisitsManager({context, show, defaultLimit = 30}: Props)
     columns.push({
         title: 'Время',
         key: 'time',
-        width: 100,
+        width: 140,
         render: (row: VisitResponse | GapRow) => {
             const start = dayjs(row.start_date).format('HH:mm')
             const end = row.end_date ? dayjs(row.end_date).format('HH:mm') : ''
@@ -378,9 +378,11 @@ export default function VisitsManager({context, show, defaultLimit = 30}: Props)
                     children: (
                         <div
                             style={{
-                                textAlign: 'center',
-                                color: '#8c8c8c',
-                                fontStyle: 'italic',
+                                // textAlign: 'center',
+                                // color: '#8c8c8c',
+                                color: 'black',
+                                background: 'pink',
+                                // fontStyle: 'italic',
                                 padding: 4,
                             }}
                         >
@@ -486,7 +488,7 @@ export default function VisitsManager({context, show, defaultLimit = 30}: Props)
                         <Button
                             className="p-1 rounded-full bg-blue-50 hover:bg-blue-100 text-blue-600"
                             onClick={() => navigate(`/visits/${v.id}`)}
-                            title="Информация о посещении"
+                            title="Информация о приёме"
                         >
                             <Info size={16} color="#2563eb"/>
                         </Button>
@@ -517,7 +519,7 @@ export default function VisitsManager({context, show, defaultLimit = 30}: Props)
                         </Button>
 
                         <Popconfirm
-                            title="Удалить посещение?"
+                            title="Удалить приём?"
                             okText="Удалить"
                             cancelText="Отмена"
                             okButtonProps={{
@@ -663,7 +665,7 @@ export default function VisitsManager({context, show, defaultLimit = 30}: Props)
                         })
                     }}
                 >
-                    Новое посещение
+                    Новое приём
                 </Button>
             </Space>
 
@@ -675,7 +677,7 @@ export default function VisitsManager({context, show, defaultLimit = 30}: Props)
             />
 
             <Modal
-                title={editing ? 'Редактировать посещение' : 'Новое посещение'}
+                title={editing ? 'Редактировать приём' : 'Новое приём'}
                 open={open}
                 onCancel={() => {
                     setOpen(false);

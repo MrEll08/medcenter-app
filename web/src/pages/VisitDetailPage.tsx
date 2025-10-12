@@ -77,14 +77,14 @@ export default function VisitDetailPage() {
     const deleteMut = useMutation({
         mutationFn: () => deleteVisit(id!),
         onSuccess: () => {
-            message.success('Посещение удалено')
-            // Можно вернуть на список посещений
+            message.success('Приём удалено')
+            // Можно вернуть на список приёмов
             navigate('/visits')
         },
         onError: (err: unknown) => message.error(getErrorMessage(err)),
     })
 
-    // Инициализируем форму при загрузке посещения
+    // Инициализируем форму при загрузке приёма
     useEffect(() => {
         if (!visit) return
         const start = dayjs(visit.start_date)
@@ -149,7 +149,7 @@ export default function VisitDetailPage() {
                 </Col>
                 <Col flex="auto">
                     <Typography.Title level={3} style={{ margin: 0 }}>
-                        Посещение от {headerDate}
+                        Приём от {headerDate}
                     </Typography.Title>
                 </Col>
                 <Col flex="none">
@@ -159,7 +159,7 @@ export default function VisitDetailPage() {
                         </Button>
 
                         <Popconfirm
-                            title="Удалить посещение?"
+                            title="Удалить приём?"
                             okText="Удалить"
                             cancelText="Отмена"
                             okButtonProps={{ danger: true, loading: deleteMut.isPending }}

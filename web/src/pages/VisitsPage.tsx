@@ -5,7 +5,7 @@ export default function VisitsPage() {
     return (
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
             <Typography.Title level={3} style={{ marginBottom: 16 }}>
-                Все посещения
+                Все приёмы
             </Typography.Title>
 
             <VisitsManager
