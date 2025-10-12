@@ -1,5 +1,5 @@
 import {useMemo, useState} from 'react'
-import {Button, DatePicker, Form, Input, InputNumber, Modal, Select, Space, Table, Tag, message, Popconfirm} from 'antd'
+import {Button, DatePicker, Form, Input, InputNumber, Modal, Select, Space, Table, message, Popconfirm, Tooltip, Dropdown} from 'antd'
 import type {ColumnsType} from 'antd/es/table'
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query'
 import dayjs, {Dayjs} from 'dayjs'
@@ -36,7 +36,12 @@ async function fetchClientMini(id: string): Promise<ClientMini> {
 }
 
 const {RangePicker} = DatePicker
-const STATUS: VisitStatusEnum[] = ['UNCONFIRMED', 'CONFIRMED', 'IN_PROGRESS', 'COMPLETED', 'PAID']
+const STATUS: VisitStatusEnum[] = ['UNCONFIRMED', 'CONFIRMED', 'PAID']
+const STATUS_META: Record<VisitStatusEnum, { emoji: string; label: string }> = {
+    UNCONFIRMED: {emoji: '❌', label: 'Не подтверждён'},
+    CONFIRMED: {emoji: '✅', label: 'Подтверждён'},
+    PAID: {emoji: '💠', label: 'Оплачен'},
+}
 
 type VisitFormValues = {
     // ids
@@ -351,6 +356,16 @@ export default function VisitsManager({context, show, defaultLimit = 30}: Props)
         onError: (err: unknown) => message.error(getErrorMessage(err)),
     })
 
+    const updateStatusMut = useMutation({
+        mutationFn: ({id, status}: { id: string; status: VisitStatusEnum }) =>
+            updateVisit(id, {status}),
+        onSuccess: () => {
+            message.success('Статус обновлён')
+            qc.invalidateQueries({queryKey: ['visits']})
+        },
+        onError: (err: unknown) => message.error(getErrorMessage(err)),
+    })
+
     // -------- Колонки --------
     let totalCols = 0
     const columns: ColumnsType<VisitResponse | GapRow> = []
@@ -469,10 +484,36 @@ export default function VisitsManager({context, show, defaultLimit = 30}: Props)
         columns.push({
             title: 'Статус',
             dataIndex: 'status',
-            render: (s: VisitStatusEnum, row: VisitResponse | GapRow) =>
-                isGap(row)
-                    ? {children: null, props: {colSpan: 0}}
-                    : <Tag>{s}</Tag>,
+            width: 56,
+            align: 'center',
+            render: (s: VisitStatusEnum, row: VisitResponse | GapRow) => {
+                if (isGap(row)) return {children: null, props: {colSpan: 0}}
+
+                const v = row as VisitResponse
+                return (
+                    <Dropdown
+                        trigger={['click']}
+                        menu={{
+                            items: STATUS.map(st => ({
+                                key: st,
+                                label: `${STATUS_META[st].emoji} ${STATUS_META[st].label}`,
+                            })),
+                            onClick: ({key}) =>
+                                updateStatusMut.mutate({id: v.id, status: key as VisitStatusEnum}),
+                        }}
+                    >
+                        <Tooltip title={STATUS_META[s].label}>
+                            <Button
+                                type="text"
+                                loading={updateStatusMut.isPending}
+                                style={{padding: 0, lineHeight: 1}}
+                            >
+                                {STATUS_META[s].emoji}
+                            </Button>
+                        </Tooltip>
+                    </Dropdown>
+                )
+            },
         })
     }
     if (show?.actions !== false) {
@@ -607,7 +648,7 @@ export default function VisitsManager({context, show, defaultLimit = 30}: Props)
                     value={status}
                     onChange={setStatus}
                     style={{width: 220}}
-                    options={STATUS.map(s => ({value: s, label: s}))}
+                    options={STATUS.map(s => ({value: s, label: `${STATUS_META[s].emoji} ${STATUS_META[s].label}`}))}
                 />
                 {show?.cabinet !== false && (
                     <Input placeholder="Кабинет" value={cabinet}
@@ -728,7 +769,13 @@ export default function VisitsManager({context, show, defaultLimit = 30}: Props)
 
                     {editing && (
                         <Form.Item name="status" label="Статус">
-                            <Select allowClear options={STATUS.map(s => ({value: s, label: s}))}/>
+                            <Select
+                                allowClear
+                                options={STATUS.map(s => ({
+                                    value: s,
+                                    label: `${STATUS_META[s].emoji} ${STATUS_META[s].label}`
+                                }))}
+                            />
                         </Form.Item>
                     )}
                 </Form>

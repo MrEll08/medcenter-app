@@ -31,6 +31,7 @@ seed:
 	docker compose exec -T $(DB_SVC) psql -U $$POSTGRES_USER -d $$POSTGRES_DB -v ON_ERROR_STOP=1 -f /tmp/seed.sql
 
 seed-reset:
+	docker compose cp $(SEED_SQL) $(DB_SVC):/tmp/seed.sql
 	docker compose exec -T $(DB_SVC) psql -U $$POSTGRES_USER -d $$POSTGRES_DB -v ON_ERROR_STOP=1 -c "TRUNCATE TABLE visit, doctor, client RESTART IDENTITY CASCADE;"
 	docker compose exec -T $(DB_SVC) psql -U $$POSTGRES_USER -d $$POSTGRES_DB -v ON_ERROR_STOP=1 -f /tmp/seed.sql
 

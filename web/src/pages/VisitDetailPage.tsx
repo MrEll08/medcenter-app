@@ -1,18 +1,18 @@
-import { useEffect, useMemo, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { api } from '../lib/api'
-import type { VisitResponse, VisitStatusEnum, VisitUpdateRequest } from '../api'
+import {useEffect, useMemo, useState} from 'react'
+import {useNavigate, useParams} from 'react-router-dom'
+import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query'
+import {api} from '../lib/api'
+import type {VisitResponse, VisitStatusEnum, VisitUpdateRequest} from '../api'
 import {
     Button, Card, Col, DatePicker, Form, Input, InputNumber, Row, Select, Space, Spin, Tag, Typography, message,
     Popconfirm
 } from 'antd'
-import type { Dayjs } from 'dayjs'
+import type {Dayjs} from 'dayjs'
 import dayjs from 'dayjs'
-import { getErrorMessage } from '../lib/errors'
+import {getErrorMessage} from '../lib/errors'
 import EntitySelect from '../components/EntitySelect'
 import EntityLink from '../components/EntityLink'
-import { Pencil, Trash2 } from 'lucide-react'
+import {Pencil, Trash2} from 'lucide-react'
 
 type VisitForm = {
     client_id: string
@@ -26,16 +26,18 @@ type VisitForm = {
     status: VisitStatusEnum
 }
 
-const STATUS: VisitStatusEnum[] = ['UNCONFIRMED','CONFIRMED','IN_PROGRESS','COMPLETED','PAID']
+const STATUS: VisitStatusEnum[] = ['UNCONFIRMED', 'CONFIRMED', 'PAID']
 
 async function fetchVisit(id: string): Promise<VisitResponse> {
     const res = await api.get<VisitResponse>(`/visits/${id}`)
     return res.data
 }
+
 async function updateVisit(id: string, body: VisitUpdateRequest): Promise<VisitResponse> {
     const res = await api.patch<VisitResponse>(`/visits/${id}`, body)
     return res.data
 }
+
 async function deleteVisit(id: string): Promise<void> {
     await api.delete(`/visits/${id}`)
 }
@@ -50,11 +52,11 @@ function combineDateAndTime(date: Dayjs, time: Dayjs): string {
 }
 
 export default function VisitDetailPage() {
-    const { id } = useParams<{ id: string }>()
+    const {id} = useParams<{ id: string }>()
     const navigate = useNavigate()
     const qc = useQueryClient()
 
-    const { data: visit, isLoading, refetch } = useQuery({
+    const {data: visit, isLoading, refetch} = useQuery({
         queryKey: ['visit', id],
         queryFn: () => fetchVisit(id!),
         enabled: !!id,
@@ -139,30 +141,30 @@ export default function VisitDetailPage() {
         updateMut.mutate(body)
     }
 
-    if (isLoading || !visit) return <Spin />
+    if (isLoading || !visit) return <Spin/>
 
     return (
-        <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-            <Row gutter={[16, 16]} align="middle" style={{ marginBottom: 8 }}>
+        <div style={{maxWidth: 1100, margin: '0 auto'}}>
+            <Row gutter={[16, 16]} align="middle" style={{marginBottom: 8}}>
                 <Col flex="none">
                     <Button onClick={() => navigate(-1)}>← Назад</Button>
                 </Col>
                 <Col flex="auto">
-                    <Typography.Title level={3} style={{ margin: 0 }}>
+                    <Typography.Title level={3} style={{margin: 0}}>
                         Приём от {headerDate}
                     </Typography.Title>
                 </Col>
                 <Col flex="none">
                     <Space>
                         <Button onClick={() => setEditing((e) => !e)} title="Редактировать">
-                            <Pencil size={16} className="text-blue-600" />
+                            <Pencil size={16} className="text-blue-600"/>
                         </Button>
 
                         <Popconfirm
                             title="Удалить приём?"
                             okText="Удалить"
                             cancelText="Отмена"
-                            okButtonProps={{ danger: true, loading: deleteMut.isPending }}
+                            okButtonProps={{danger: true, loading: deleteMut.isPending}}
                             onConfirm={(e) => {
                                 e?.stopPropagation?.()
                                 deleteMut.mutate()         // ← реально удаляем здесь
@@ -176,92 +178,112 @@ export default function VisitDetailPage() {
                                 htmlType="button"
                                 title="Удалить"
                             >
-                                <Trash2 size={16} className="text-red-600" />
+                                <Trash2 size={16} className="text-red-600"/>
                             </Button>
                         </Popconfirm>
                     </Space>
                 </Col>
             </Row>
 
-            <Card style={{ marginBottom: 16 }}>
+            <Card style={{marginBottom: 16}}>
                 <Row gutter={[16, 8]}>
                     <Col xs={24} md={12}>
-                        <div><b>Пациент:</b> <EntityLink kind="clients" id={visit.client_id} label={visit.client_name} /></div>
+                        <div><b>Пациент:</b> <EntityLink kind="clients" id={visit.client_id} label={visit.client_name}/>
+                        </div>
                     </Col>
                     <Col xs={24} md={12}>
-                        <div><b>Врач:</b> <EntityLink kind="doctors" id={visit.doctor_id} label={visit.doctor_name} /></div>
+                        <div><b>Врач:</b> <EntityLink kind="doctors" id={visit.doctor_id} label={visit.doctor_name}/>
+                        </div>
                     </Col>
-                    <Col xs={24} md={8}><div><b>Дата:</b> {dayjs(visit.start_date).format('YYYY-MM-DD')}</div></Col>
-                    <Col xs={24} md={8}><div><b>Начало:</b> {dayjs(visit.start_date).format('HH:mm')}</div></Col>
-                    <Col xs={24} md={8}><div><b>Окончание:</b> {dayjs(visit.end_date).format('HH:mm')}</div></Col>
-                    <Col xs={24} md={8}><div><b>Статус:</b> <Tag>{visit.status}</Tag></div></Col>
-                    <Col xs={24} md={8}><div><b>Кабинет:</b> {visit.cabinet ?? '—'}</div></Col>
-                    <Col xs={24} md={8}><div><b>Стоимость:</b> {visit.cost ?? '—'}</div></Col>
-                    <Col xs={24}><div><b>Услуга:</b> {visit.procedure ?? '—'}</div></Col>
+                    <Col xs={24} md={8}>
+                        <div><b>Дата:</b> {dayjs(visit.start_date).format('YYYY-MM-DD')}</div>
+                    </Col>
+                    <Col xs={24} md={8}>
+                        <div><b>Начало:</b> {dayjs(visit.start_date).format('HH:mm')}</div>
+                    </Col>
+                    <Col xs={24} md={8}>
+                        <div><b>Окончание:</b> {dayjs(visit.end_date).format('HH:mm')}</div>
+                    </Col>
+                    <Col xs={24} md={8}>
+                        <div><b>Статус:</b> <Tag>{visit.status}</Tag></div>
+                    </Col>
+                    <Col xs={24} md={8}>
+                        <div><b>Кабинет:</b> {visit.cabinet ?? '—'}</div>
+                    </Col>
+                    <Col xs={24} md={8}>
+                        <div><b>Стоимость:</b> {visit.cost ?? '—'}</div>
+                    </Col>
+                    <Col xs={24}>
+                        <div><b>Услуга:</b> {visit.procedure ?? '—'}</div>
+                    </Col>
                 </Row>
             </Card>
 
-            <Typography.Title level={4} style={{ marginTop: 0 }}>Редактирование</Typography.Title>
+            <Typography.Title level={4} style={{marginTop: 0}}>Редактирование</Typography.Title>
 
             <Form form={form} layout="vertical" disabled={!editing}>
                 <Row gutter={[16, 0]}>
                     <Col xs={24} md={12}>
-                        <Form.Item name="client_id" label="Пациент" rules={[{ required: true, message: 'Выберите пациента' }]}>
-                            <EntitySelect entity="clients" />
+                        <Form.Item name="client_id" label="Пациент"
+                                   rules={[{required: true, message: 'Выберите пациента'}]}>
+                            <EntitySelect entity="clients"/>
                         </Form.Item>
                     </Col>
                     <Col xs={24} md={12}>
-                        <Form.Item name="doctor_id" label="Врач" rules={[{ required: true, message: 'Выберите врача' }]}>
-                            <EntitySelect entity="doctors" />
+                        <Form.Item name="doctor_id" label="Врач" rules={[{required: true, message: 'Выберите врача'}]}>
+                            <EntitySelect entity="doctors"/>
                         </Form.Item>
                     </Col>
 
                     <Col xs={24} md={8}>
-                        <Form.Item name="date" label="Дата" rules={[{ required: true, message: 'Укажите дату' }]}>
-                            <DatePicker style={{ width: '100%' }} />
+                        <Form.Item name="date" label="Дата" rules={[{required: true, message: 'Укажите дату'}]}>
+                            <DatePicker style={{width: '100%'}}/>
                         </Form.Item>
                     </Col>
                     <Col xs={24} md={8}>
-                        <Form.Item name="time_start" label="Начало" rules={[{ required: true, message: 'Укажите время начала' }]}>
-                            <DatePicker showTime format="HH:mm" picker="time" />
+                        <Form.Item name="time_start" label="Начало"
+                                   rules={[{required: true, message: 'Укажите время начала'}]}>
+                            <DatePicker showTime format="HH:mm" picker="time"/>
                         </Form.Item>
                     </Col>
                     <Col xs={24} md={8}>
                         <Form.Item name="time_end" label="Окончание">
-                            <DatePicker showTime format="HH:mm" picker="time" />
+                            <DatePicker showTime format="HH:mm" picker="time"/>
                         </Form.Item>
                     </Col>
 
                     <Col xs={24} md={12}>
                         <Form.Item name="procedure" label="Услуга">
-                            <Input />
+                            <Input/>
                         </Form.Item>
                     </Col>
                     <Col xs={24} md={12}>
                         <Form.Item name="cabinet" label="Кабинет">
-                            <Input />
+                            <Input/>
                         </Form.Item>
                     </Col>
 
                     <Col xs={24} md={12}>
                         <Form.Item name="cost" label="Стоимость">
-                            <InputNumber style={{ width: '100%' }} min={0} step={50} />
+                            <InputNumber style={{width: '100%'}} min={0} step={50}/>
                         </Form.Item>
                     </Col>
 
                     <Col xs={24} md={12}>
-                        <Form.Item name="status" label="Статус" rules={[{ required: true, message: 'Выберите статус' }]}>
-                            <Select options={STATUS.map(s => ({ value: s, label: s }))} />
+                        <Form.Item name="status" label="Статус" rules={[{required: true, message: 'Выберите статус'}]}>
+                            <Select options={STATUS.map(s => ({value: s, label: s}))}/>
                         </Form.Item>
                     </Col>
                 </Row>
 
                 {editing && (
-                    <Space style={{ marginTop: 12 }}>
+                    <Space style={{marginTop: 12}}>
                         <Button type="primary" onClick={onSave} loading={updateMut.isPending}>
                             Сохранить
                         </Button>
-                        <Button onClick={() => { setEditing(false); form.resetFields(); /* вернуть текущие значения из visit */
+                        <Button onClick={() => {
+                            setEditing(false);
+                            form.resetFields(); /* вернуть текущие значения из visit */
                             if (visit) {
                                 const start = dayjs(visit.start_date)
                                 const end = dayjs(visit.end_date)

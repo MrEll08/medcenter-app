@@ -44,7 +44,7 @@ v AS (
          (SELECT id FROM inserted_doctors LIMIT 1 OFFSET 0),
          CURRENT_TIMESTAMP - interval '3 day',
          CURRENT_TIMESTAMP - interval '3 day' + interval '1 hour',
-         'Повторный приём', 60.00, 'COMPLETED'::visit_status),
+         'Повторный приём', 60.00, 'CONFIRMED'::visit_status),
 
         -- отменённый
         ((SELECT id FROM inserted_clients LIMIT 1 OFFSET 4),
