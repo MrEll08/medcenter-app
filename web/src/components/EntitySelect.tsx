@@ -37,7 +37,7 @@ export default function EntitySelect({ entity, value, onChange, allowClear, plac
             allowClear={allowClear}
             placeholder={placeholder}
             optionFilterProp="label"
-            style={{ width: '100%' }}
+            style={{ width: 170 }}
             options={data ?? []}
         />
     )

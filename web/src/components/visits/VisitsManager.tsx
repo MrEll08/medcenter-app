@@ -362,7 +362,7 @@ export default function VisitsManager({context, show, defaultLimit = 30}: Props)
             p.end_date = range[1].toISOString()
         }
         return p
-    }, [clientId, doctorId, status, cabinet, procedure, day, range, limit])
+    }, [isDoctorDayMode, clientId, doctorId, status, cabinet, procedure, day, range, limit])
 
     const {data, isLoading} = useQuery<VisitResponse[]>({
         queryKey: ['visits', params],
@@ -396,7 +396,7 @@ export default function VisitsManager({context, show, defaultLimit = 30}: Props)
 
         const search = sp.toString()
         navigate({search: search ? `?${search}` : ''}, {replace: true})
-    }, [clientId, doctorId, status, cabinet, procedure, day, range, limit, defaultLimit, navigate])
+    }, [clientId, doctorId, status, cabinet, procedure, day, range, limit, defaultLimit, navigate, context?.clientId, context?.doctorId])
 
     useEffect(() => {
         if (!printOpen || !data) return
@@ -834,6 +834,18 @@ export default function VisitsManager({context, show, defaultLimit = 30}: Props)
         }
     }
 
+    function resetFilters() {
+        setClientId(context?.clientId)
+        setDoctorId(context?.doctorId)
+        setStatus(undefined)
+        setCabinet(undefined)
+        setProcedure(undefined)
+
+        setDay(null)
+        setRange(null)
+
+        setLimit(defaultLimit)
+    }
 
     // -------- UI --------
     return (
@@ -856,6 +868,9 @@ export default function VisitsManager({context, show, defaultLimit = 30}: Props)
                 >
                     Новый приём
                 </Button>
+                <Button onClick={resetFilters} danger ghost>
+                    Сбросить
+                </Button>
 
                 {!context?.clientId && (
                     <EntitySelect entity="clients" value={clientId} onChange={setClientId} placeholder="Пациент"
@@ -870,17 +885,17 @@ export default function VisitsManager({context, show, defaultLimit = 30}: Props)
                     placeholder="Статус"
                     value={status}
                     onChange={setStatus}
-                    style={{width: 220}}
+                    style={{width: 170}}
                     options={STATUS.map(s => ({value: s, label: `${STATUS_META[s].emoji} ${STATUS_META[s].label}`}))}
                 />
                 {show?.cabinet !== false && (
                     <Input placeholder="Кабинет" value={cabinet}
                            onChange={(e) => setCabinet(e.target.value || undefined)}/>
                 )}
-                {show?.procedure !== false && (
+                {/*{show?.procedure !== false && (
                     <Input placeholder="Услуга" value={procedure}
                            onChange={(e) => setProcedure(e.target.value || undefined)}/>
-                )}
+                )}*/}
                 <DatePicker
                     placeholder="День"
                     value={day ?? undefined}

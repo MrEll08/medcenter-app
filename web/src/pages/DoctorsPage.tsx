@@ -46,7 +46,7 @@ export default function DoctorsPage() {
                 createItem={createDoctor}
                 updateItem={updateDoctor}
                 columns={columns}
-                searchPlaceholder="Поиск по ФИО/телефону"
+                searchPlaceholder="Поиск по ФИО"
                 createButtonText="Новый врач"
                 renderForm={() => (
                     <>
