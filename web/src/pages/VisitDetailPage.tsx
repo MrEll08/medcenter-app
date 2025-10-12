@@ -79,7 +79,7 @@ export default function VisitDetailPage() {
     const deleteMut = useMutation({
         mutationFn: () => deleteVisit(id!),
         onSuccess: () => {
-            message.success('Приём удалено')
+            message.success('Приём удален')
             // Можно вернуть на список приёмов
             navigate('/visits')
         },

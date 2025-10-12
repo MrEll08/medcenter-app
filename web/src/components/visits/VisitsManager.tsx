@@ -1,5 +1,19 @@
 import {useMemo, useState} from 'react'
-import {Button, DatePicker, Form, Input, InputNumber, Modal, Select, Space, Table, message, Popconfirm, Tooltip, Dropdown} from 'antd'
+import {
+    Button,
+    DatePicker,
+    Form,
+    Input,
+    InputNumber,
+    Modal,
+    Select,
+    Space,
+    Table,
+    message,
+    Popconfirm,
+    Tooltip,
+    Dropdown
+} from 'antd'
 import type {ColumnsType} from 'antd/es/table'
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query'
 import dayjs, {Dayjs} from 'dayjs'
@@ -42,6 +56,8 @@ const STATUS_META: Record<VisitStatusEnum, { emoji: string; label: string }> = {
     CONFIRMED: {emoji: '✅', label: 'Подтверждён'},
     PAID: {emoji: '💠', label: 'Оплачен'},
 }
+const DURATIONS = [5, 10, 15, 20, 25, 30, 40, 60] as const
+type DurationMin = typeof DURATIONS[number]
 
 type VisitFormValues = {
     // ids
@@ -50,7 +66,7 @@ type VisitFormValues = {
     // дата/время для UI
     date?: Dayjs | null
     time_start?: Dayjs | null
-    time_end?: Dayjs | null
+    duration?: DurationMin | null
     // прочие поля
     status?: VisitStatusEnum
     procedure?: string
@@ -146,6 +162,14 @@ export default function VisitsManager({context, show, defaultLimit = 30}: Props)
         return {h: Number(m[1]), m: Number(m[2])}
     }
 
+    function disabledHoursForWorkday() {
+        const arr: number[] = []
+        for (let h = 0; h < 24; h++) {
+            if (h < 6 || h > 22) arr.push(h) // разрешаем 6..22 включительно
+        }
+        return arr
+    }
+
     // === Типы для «белых» строк ===
     type GapRow = {
         __gap: true
@@ -218,6 +242,46 @@ export default function VisitsManager({context, show, defaultLimit = 30}: Props)
 
         return rows
     }
+
+    type EditableField = 'procedure' | 'cost'
+
+    const [editingCell, setEditingCell] = useState<{ id: string; field: EditableField } | null>(null)
+    const [draftValue, setDraftValue] = useState<string | number | null>(null)
+
+    function beginEdit(v: VisitResponse, field: EditableField) {
+        setEditingCell({id: v.id, field})
+        if (field === 'cost') {
+            setDraftValue(typeof v.cost === 'number' ? v.cost : null)
+        } else {
+            setDraftValue(v.procedure ?? '')
+        }
+    }
+
+    function cancelEdit() {
+        setEditingCell(null)
+        setDraftValue(null)
+    }
+
+    function saveEdit(v: VisitResponse) {
+        if (!editingCell) return
+        const body: Partial<VisitUpdateRequest> =
+            editingCell.field === 'cost'
+                ? {cost: draftValue === '' || draftValue === null ? null : Number(draftValue)}
+                : {procedure: draftValue === '' ? null : String(draftValue)}
+
+        updateInlineMutate.mutate({id: v.id, body})
+    }
+
+    const updateInlineMutate = useMutation({
+        mutationFn: ({id, body}: { id: string; body: Partial<VisitUpdateRequest> }) =>
+            updateVisit(id, body as VisitUpdateRequest),
+        onSuccess: () => {
+            message.success('Сохранено')
+            qc.invalidateQueries({queryKey: ['visits']})
+            cancelEdit()
+        },
+        onError: (err: unknown) => message.error(getErrorMessage(err)),
+    })
 
     const [printOpen, setPrintOpen] = useState(false)
     const [printCols, setPrintCols] = useState<PrintColumnKey[]>(
@@ -327,7 +391,7 @@ export default function VisitsManager({context, show, defaultLimit = 30}: Props)
     const createMut = useMutation({
         mutationFn: (b: VisitCreateRequest) => createVisit(b),
         onSuccess: () => {
-            message.success('Приём добавлено')
+            message.success('Приём добавлен')
             qc.invalidateQueries({queryKey: ['visits']})
             setOpen(false)
             form.resetFields()
@@ -372,6 +436,7 @@ export default function VisitsManager({context, show, defaultLimit = 30}: Props)
     if (!isDayMode && show?.date !== false) {
         columns.push({
             title: 'Дата',
+            width: 110,
             dataIndex: 'start_date',
             render: (iso: string, row: VisitResponse | GapRow) =>
                 isGap(row)
@@ -454,10 +519,38 @@ export default function VisitsManager({context, show, defaultLimit = 30}: Props)
             title: 'Услуга',
             dataIndex: 'procedure',
             ellipsis: true,
-            render: (v: string | null | undefined, row: VisitResponse | GapRow) =>
-                isGap(row)
-                    ? {children: null, props: {colSpan: 0}}
-                    : (v ?? '—'),
+            onCell: () => ({style: {cursor: 'text'}}),
+            render: (_: string | null | undefined, row: VisitResponse | GapRow) => {
+                if (isGap(row)) return {children: null, props: {colSpan: 0}}
+                const v = row as VisitResponse
+
+                const isEditing = editingCell?.id === v.id && editingCell.field === 'procedure'
+                if (isEditing) {
+                    return (
+                        <Input
+                            autoFocus
+                            value={typeof draftValue === 'string' ? draftValue : ''}
+                            onChange={(e) => setDraftValue(e.target.value)}
+                            onPressEnter={() => saveEdit(v)}
+                            onBlur={() => saveEdit(v)}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Escape') cancelEdit()
+                            }}
+                            disabled={updateInlineMutate.isPending}
+                            placeholder="Услуга"
+                        />
+                    )
+                }
+
+                return (
+                    <span
+                        onClick={() => beginEdit(v, 'procedure')}
+                        title="Нажмите, чтобы редактировать"
+                    >
+                        {v.procedure ?? '—'}
+                    </span>
+                )
+            },
         })
     }
     if (show?.cabinet !== false) {
@@ -474,15 +567,48 @@ export default function VisitsManager({context, show, defaultLimit = 30}: Props)
         columns.push({
             title: 'Стоимость',
             dataIndex: 'cost',
-            render: (v: number | null | undefined, row: VisitResponse | GapRow) =>
-                isGap(row)
-                    ? {children: null, props: {colSpan: 0}}
-                    : (v ?? '—'),
+            width: 110,
+            align: 'right',
+            onCell: () => ({style: {cursor: 'text'}}),
+            render: (_: number | null | undefined, row: VisitResponse | GapRow) => {
+                if (isGap(row)) return {children: null, props: {colSpan: 0}}
+                const v = row as VisitResponse
+
+                const isEditing = editingCell?.id === v.id && editingCell.field === 'cost'
+                if (isEditing) {
+                    return (
+                        <InputNumber
+                            autoFocus
+                            style={{width: '100%'}}
+                            value={typeof draftValue === 'number' ? draftValue : null}
+                            onChange={(val) => setDraftValue(typeof val === 'number' ? val : null)}
+                            onPressEnter={() => saveEdit(v)}
+                            onBlur={() => saveEdit(v)}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Escape') cancelEdit()
+                            }}
+                            min={0}
+                            step={50}
+                            stringMode={false}
+                            disabled={updateInlineMutate.isPending}
+                            placeholder="Стоимость"
+                        />
+                    )
+                }
+                return (
+                    <span
+                        onClick={() => beginEdit(v, 'cost')}
+                        title="Нажмите, чтобы редактировать"
+                    >
+                        {typeof v.cost === 'number' ? v.cost : '—'}
+                    </span>
+                )
+            },
         })
     }
     if (show?.status !== false) {
         columns.push({
-            title: 'Статус',
+            title: 'Ст.',
             dataIndex: 'status',
             width: 56,
             align: 'center',
@@ -542,18 +668,22 @@ export default function VisitsManager({context, show, defaultLimit = 30}: Props)
                                 setOpen(true)
                                 const start = dayjs(v.start_date)
                                 const end = dayjs(v.end_date)
+                                const rawDuration = v.end_date ? end.diff(start, 'minute') : undefined
+                                const duration = (rawDuration && DURATIONS.includes(rawDuration as DurationMin))
+                                    ? (rawDuration as DurationMin)
+                                    : undefined
                                 form.setFieldsValue({
                                     client_id: context?.clientId ?? v.client_id,
                                     doctor_id: context?.doctorId ?? v.doctor_id,
                                     date: start,
                                     time_start: start,
-                                    time_end: end,
+                                    duration,                         // <--- вот это новое
                                     procedure: v.procedure ?? undefined,
                                     cabinet: v.cabinet ?? undefined,
-                                    cost:
-                                        typeof v.cost === 'number' ? v.cost : undefined,
+                                    cost: typeof v.cost === 'number' ? v.cost : undefined,
                                     status: v.status,
                                 })
+
                             }}
                         >
                             <Pencil size={16} className="text-blue-600"/>
@@ -596,12 +726,12 @@ export default function VisitsManager({context, show, defaultLimit = 30}: Props)
         const v = await form.validateFields()
 
         const startISO = v.date && v.time_start ? combineDateAndTime(v.date, v.time_start) : undefined
-        const endISO = v.date && v.time_end ? combineDateAndTime(v.date, v.time_end) : null
+        const endISO =
+            startISO && v.duration
+                ? dayjs(startISO).add(v.duration, 'minute').toISOString()
+                : null
 
-        if (startISO && endISO && dayjs(endISO).isBefore(dayjs(startISO))) {
-            message.error('Окончание не может быть раньше начала')
-            return
-        }
+        // больше не сравниваем start/end — end вычисляется из duration
 
         if (editing) {
             const body: VisitUpdateRequest = {
@@ -628,6 +758,7 @@ export default function VisitsManager({context, show, defaultLimit = 30}: Props)
             createMut.mutate(body)
         }
     }
+
 
     // -------- UI --------
     return (
@@ -703,10 +834,12 @@ export default function VisitsManager({context, show, defaultLimit = 30}: Props)
                         form.setFieldsValue({
                             client_id: context?.clientId,
                             doctor_id: context?.doctorId,
+                            date: day ?? undefined,
+                            duration: 10,
                         })
                     }}
                 >
-                    Новое приём
+                    Новый приём
                 </Button>
             </Space>
 
@@ -718,7 +851,7 @@ export default function VisitsManager({context, show, defaultLimit = 30}: Props)
             />
 
             <Modal
-                title={editing ? 'Редактировать приём' : 'Новое приём'}
+                title={editing ? 'Редактировать приём' : 'Новый приём'}
                 open={open}
                 onCancel={() => {
                     setOpen(false);
@@ -748,12 +881,32 @@ export default function VisitsManager({context, show, defaultLimit = 30}: Props)
                     </Form.Item>
 
                     <Space size="large" wrap>
-                        <Form.Item name="time_start" label="Начало"
-                                   rules={[{required: !editing, message: 'Укажите время начала'}]}>
-                            <TimePicker format="HH:mm"/>
+                        <Form.Item
+                            name="time_start"
+                            label="Начало"
+                            rules={[{required: !editing, message: 'Укажите время начала'}]}
+                        >
+                            <TimePicker
+                                format="HH:mm"
+                                minuteStep={5}                 // только минуты кратные 5
+                                disabledHours={disabledHoursForWorkday} // часы только 6..22
+                                hideDisabledOptions
+                                inputReadOnly
+                                needConfirm={false}
+                                showNow={false}
+                            />
                         </Form.Item>
-                        <Form.Item name="time_end" label="Окончание">
-                            <TimePicker format="HH:mm"/>
+
+                        <Form.Item
+                            name="duration"
+                            label="Длительность"
+                            rules={[{required: !editing, message: 'Укажите длительность'}]}
+                        >
+                            <Select
+                                placeholder="Минуты"
+                                style={{width: 140}}
+                                options={DURATIONS.map((m) => ({value: m, label: `${m} мин`}))}
+                            />
                         </Form.Item>
                     </Space>
 
