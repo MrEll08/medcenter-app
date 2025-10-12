@@ -1,4 +1,4 @@
-import {useMemo, useState} from 'react'
+import {useCallback, useMemo, useState} from 'react'
 import {
     Button,
     DatePicker,
@@ -201,11 +201,11 @@ export default function VisitsManager({context, show, defaultLimit = 30}: Props)
     const MIN_TIME = (import.meta.env.VITE_MIN_TIME as string) || '06:30'
     const MAX_TIME = (import.meta.env.VITE_MAX_TIME as string) || '21:30'
 
-    function parseHHMM(s: string): { h: number; m: number } {
+    const parseHHMM = useCallback((s: string): { h: number; m: number } => {
         const m = /^(\d{1,2}):(\d{2})$/.exec((s ?? '').trim())
         if (!m) return {h: 0, m: 0}
         return {h: Number(m[1]), m: Number(m[2])}
-    }
+    }, [])
 
     function disabledHoursForWorkday() {
         const arr: number[] = []
@@ -230,7 +230,7 @@ export default function VisitsManager({context, show, defaultLimit = 30}: Props)
 
 
     // === Построение строк дня с «щелями» ===
-    function buildDayRows(day: Dayjs, visits: VisitResponse[], minTime: string, maxTime: string): RowData[] {
+    const buildDayRows = useCallback((day: Dayjs, visits: VisitResponse[], minTime: string, maxTime: string): RowData[] => {
         const {h: minH, m: minM} = parseHHMM(minTime)
         const {h: maxH, m: maxM} = parseHHMM(maxTime)
 
@@ -241,7 +241,6 @@ export default function VisitsManager({context, show, defaultLimit = 30}: Props)
             dayjs(a.start_date).valueOf() - dayjs(b.start_date).valueOf()
         )
 
-        // Если приёмов нет — одна белая строка min–max
         if (sorted.length === 0) {
             return [{
                 __gap: true,
@@ -253,12 +252,9 @@ export default function VisitsManager({context, show, defaultLimit = 30}: Props)
 
         const rows: RowData[] = []
         let cursor = dayMin
-
         for (const v of sorted) {
             const vs = dayjs(v.start_date)
             const ve = v.end_date ? dayjs(v.end_date) : vs
-
-            // Щель до приёма
             if (vs.isAfter(cursor)) {
                 rows.push({
                     __gap: true,
@@ -267,15 +263,9 @@ export default function VisitsManager({context, show, defaultLimit = 30}: Props)
                     end_date: vs.toISOString(),
                 })
             }
-
-            // Сам приём
             rows.push(v)
-
-            // Сдвинуть курсор
             if (ve.isAfter(cursor)) cursor = ve
         }
-
-        // Хвост до max
         if (dayMax.isAfter(cursor)) {
             rows.push({
                 __gap: true,
@@ -284,9 +274,8 @@ export default function VisitsManager({context, show, defaultLimit = 30}: Props)
                 end_date: dayMax.toISOString(),
             })
         }
-
         return rows
-    }
+    }, [parseHHMM])
 
     type EditableField = 'procedure' | 'cost'
 
@@ -373,7 +362,7 @@ export default function VisitsManager({context, show, defaultLimit = 30}: Props)
         if (!isDayMode) return (data || []) as RowData[]
         if (!day) return []
         return buildDayRows(day, data || [], MIN_TIME, MAX_TIME)
-    }, [isDayMode, day, data])
+    }, [isDayMode, data, day, buildDayRows, MIN_TIME, MAX_TIME])
 
     useEffect(() => {
         if (!didHydrateFromUrl.current) return
@@ -960,13 +949,13 @@ export default function VisitsManager({context, show, defaultLimit = 30}: Props)
                     {!context?.clientId && (
                         <Form.Item name="client_id" label="Пациент"
                                    rules={[{required: !editing, message: 'Выберите пациента'}]}>
-                            <EntitySelect entity="clients"/>
+                            <EntitySelect entity="clients" fullWidth/>
                         </Form.Item>
                     )}
                     {!context?.doctorId && (
                         <Form.Item name="doctor_id" label="Врач"
                                    rules={[{required: !editing, message: 'Выберите врача'}]}>
-                            <EntitySelect entity="doctors"/>
+                            <EntitySelect entity="doctors" fullWidth/>
                         </Form.Item>
                     )}
 
@@ -1007,9 +996,9 @@ export default function VisitsManager({context, show, defaultLimit = 30}: Props)
                     <Form.Item name="procedure" label="Услуга">
                         <Input/>
                     </Form.Item>
-                    <Form.Item name="cabinet" label="Кабинет">
+                    {/*<Form.Item name="cabinet" label="Кабинет">
                         <Input/>
-                    </Form.Item>
+                    </Form.Item>*/}
                     <Form.Item name="cost" label="Стоимость">
                         <InputNumber style={{width: '100%'}} min={0} step={50}/>
                     </Form.Item>
