@@ -22,7 +22,7 @@ import type {VisitCreateRequest, VisitResponse, VisitStatusEnum, VisitUpdateRequ
 import {getErrorMessage} from '../../lib/errors'
 import EntitySelect from '../EntitySelect'
 import {Info, Pencil, Trash2} from 'lucide-react'
-import {useNavigate} from 'react-router-dom'
+import {useNavigate, useLocation} from 'react-router-dom'
 import EntityLink from '../EntityLink'
 import {TimePicker} from 'antd' // <- используем нормальный тайм-пикер
 
@@ -140,6 +140,8 @@ async function deleteVisit(id: string): Promise<void> {
 export default function VisitsManager({context, show, defaultLimit = 30}: Props) {
     const qc = useQueryClient()
     const navigate = useNavigate()
+    const location = useLocation()
+    const didHydrateFromUrl = useRef(false)
 
     // -------- Фильтры списка --------
     const [clientId, setClientId] = useState<string | undefined>(context?.clientId)
@@ -151,6 +153,49 @@ export default function VisitsManager({context, show, defaultLimit = 30}: Props)
     const [procedure, setProcedure] = useState<string | undefined>()
     const [limit, setLimit] = useState<number>(defaultLimit)
     const isDayMode = !!day && !range
+    const effDoctorId = context?.doctorId ?? doctorId
+    const isDoctorDayMode = isDayMode && !!effDoctorId
+
+    useEffect(() => {
+        if (didHydrateFromUrl.current) return
+        const sp = new URLSearchParams(location.search)
+
+        const qClient = sp.get('client_id') || undefined
+        const qDoctor = sp.get('doctor_id') || undefined
+        const qStatus = sp.get('status') as VisitStatusEnum | null
+        const qCab = sp.get('cabinet') || undefined
+        const qProc = sp.get('procedure') || undefined
+        const qLimit = sp.get('limit')
+        const qDay = sp.get('day')
+        const qStart = sp.get('start')
+        const qEnd = sp.get('end')
+
+        if (!context?.clientId && qClient) setClientId(qClient)
+        if (!context?.doctorId && qDoctor) setDoctorId(qDoctor)
+        if (qStatus && ['UNCONFIRMED', 'CONFIRMED', 'PAID'].includes(qStatus)) setStatus(qStatus)
+        if (qCab) setCabinet(qCab)
+        if (qProc) setProcedure(qProc)
+        if (qLimit && !Number.isNaN(Number(qLimit))) setLimit(Number(qLimit))
+
+        if (qDay) {
+            const d = dayjs(qDay, 'YYYY-MM-DD', true)
+            if (d.isValid()) {
+                setDay(d)
+                setRange(null)
+            }
+        } else if (qStart && qEnd) {
+            const s = dayjs(qStart)
+            const e = dayjs(qEnd)
+            if (s.isValid() && e.isValid()) {
+                setRange([s, e])
+                setDay(null)
+            }
+        }
+
+        didHydrateFromUrl.current = true
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [])
+
 
     // === Минимум/максимум времени из env ===
     const MIN_TIME = (import.meta.env.VITE_MIN_TIME as string) || '06:30'
@@ -298,7 +343,12 @@ export default function VisitsManager({context, show, defaultLimit = 30}: Props)
     const printRef = useRef<HTMLDivElement>(null)
 
     const params: VisitQueryParams = useMemo(() => {
-        const p: VisitQueryParams = {search_limit: limit}
+        const p: VisitQueryParams = {}
+        if (isDoctorDayMode) {
+            p.search_limit = 10000
+        } else {
+            p.search_limit = limit
+        }
         if (clientId) p.client_id = clientId
         if (doctorId) p.doctor_id = doctorId
         if (status) p.status = status
@@ -314,7 +364,7 @@ export default function VisitsManager({context, show, defaultLimit = 30}: Props)
         return p
     }, [clientId, doctorId, status, cabinet, procedure, day, range, limit])
 
-    const {data, isLoading, refetch} = useQuery<VisitResponse[]>({
+    const {data, isLoading} = useQuery<VisitResponse[]>({
         queryKey: ['visits', params],
         queryFn: () => fetchVisits(params),
     })
@@ -325,6 +375,28 @@ export default function VisitsManager({context, show, defaultLimit = 30}: Props)
         return buildDayRows(day, data || [], MIN_TIME, MAX_TIME)
     }, [isDayMode, day, data])
 
+    useEffect(() => {
+        if (!didHydrateFromUrl.current) return
+
+        const sp = new URLSearchParams()
+
+        if (!context?.clientId && clientId) sp.set('client_id', clientId)
+        if (!context?.doctorId && doctorId) sp.set('doctor_id', doctorId)
+        if (status) sp.set('status', status)
+        if (cabinet) sp.set('cabinet', cabinet)
+        if (procedure) sp.set('procedure', procedure)
+        if (limit !== defaultLimit) sp.set('limit', String(limit))
+
+        if (day) {
+            sp.set('day', day.format('YYYY-MM-DD'))
+        } else if (range) {
+            sp.set('start', range[0].toISOString())
+            sp.set('end', range[1].toISOString())
+        }
+
+        const search = sp.toString()
+        navigate({search: search ? `?${search}` : ''}, {replace: true})
+    }, [clientId, doctorId, status, cabinet, procedure, day, range, limit, defaultLimit, navigate])
 
     useEffect(() => {
         if (!printOpen || !data) return
@@ -645,7 +717,7 @@ export default function VisitsManager({context, show, defaultLimit = 30}: Props)
     if (show?.actions !== false) {
         columns.push({
             title: 'Действия',
-            width: 240,
+            width: 150,
             render: (_: unknown, row: VisitResponse | GapRow) => {
                 if (isGap(row)) return {children: null, props: {colSpan: 0}}
 
@@ -653,6 +725,7 @@ export default function VisitsManager({context, show, defaultLimit = 30}: Props)
                 return (
                     <Space>
                         <Button
+                            size="small"
                             className="p-1 rounded-full bg-blue-50 hover:bg-blue-100 text-blue-600"
                             onClick={() => navigate(`/visits/${v.id}`)}
                             title="Информация о приёме"
@@ -662,6 +735,7 @@ export default function VisitsManager({context, show, defaultLimit = 30}: Props)
 
                         <Button
                             className="p-1 rounded-lg hover:bg-gray-100"
+                            size="small"
                             title="Редактировать"
                             onClick={() => {
                                 setEditing(v)
@@ -704,6 +778,7 @@ export default function VisitsManager({context, show, defaultLimit = 30}: Props)
                             onCancel={(e) => e?.stopPropagation?.()}
                         >
                             <Button
+                                size="small"
                                 danger
                                 loading={deleteMut.isPending}
                                 onClick={(e) => e.stopPropagation()}
@@ -765,6 +840,23 @@ export default function VisitsManager({context, show, defaultLimit = 30}: Props)
         <div>
             {/* Фильтры */}
             <Space wrap style={{marginBottom: 16}}>
+                <Button
+                    type="primary"
+                    onClick={() => {
+                        setEditing(null)
+                        setOpen(true)
+                        form.resetFields()
+                        form.setFieldsValue({
+                            client_id: context?.clientId,
+                            doctor_id: context?.doctorId,
+                            date: day ?? undefined,
+                            duration: 10,
+                        })
+                    }}
+                >
+                    Новый приём
+                </Button>
+
                 {!context?.clientId && (
                     <EntitySelect entity="clients" value={clientId} onChange={setClientId} placeholder="Пациент"
                                   allowClear/>
@@ -810,36 +902,22 @@ export default function VisitsManager({context, show, defaultLimit = 30}: Props)
                         }
                     }}
                 />
-                <InputNumber
-                    min={1}
-                    max={500}
-                    value={limit}
-                    onChange={(v) => setLimit(typeof v === 'number' ? v : defaultLimit)}
-                    placeholder="Лимит"
-                />
+                {!isDoctorDayMode && (
+                    <InputNumber
+                        min={1}
+                        max={500}
+                        value={limit}
+                        onChange={(v) => setLimit(typeof v === 'number' ? v : defaultLimit)}
+                        placeholder="Лимит"
+                        disabled={isDoctorDayMode}
+                    />
+                )}
                 <Button
                     onClick={() => setPrintOpen(true)}
                     className="p-1 rounded-lg hover:bg-gray-100"
                     title="Печать / PDF"
                 >
                     <Printer size={16} className="text-blue-600"/>
-                </Button>
-                <Button onClick={() => refetch()}>Применить</Button>
-                <Button
-                    type="primary"
-                    onClick={() => {
-                        setEditing(null)
-                        setOpen(true)
-                        form.resetFields()
-                        form.setFieldsValue({
-                            client_id: context?.clientId,
-                            doctor_id: context?.doctorId,
-                            date: day ?? undefined,
-                            duration: 10,
-                        })
-                    }}
-                >
-                    Новый приём
                 </Button>
             </Space>
 
@@ -848,6 +926,7 @@ export default function VisitsManager({context, show, defaultLimit = 30}: Props)
                 loading={isLoading}
                 dataSource={tableData}
                 columns={columns}
+                pagination={isDoctorDayMode ? false : undefined}
             />
 
             <Modal
