@@ -35,7 +35,7 @@ seed-reset:
 	docker compose exec -T $(DB_SVC) psql -U $$POSTGRES_USER -d $$POSTGRES_DB -v ON_ERROR_STOP=1 -c "TRUNCATE TABLE visit, doctor, client RESTART IDENTITY CASCADE;"
 	docker compose exec -T $(DB_SVC) psql -U $$POSTGRES_USER -d $$POSTGRES_DB -v ON_ERROR_STOP=1 -f /tmp/seed.sql
 
-ALEMBIC = poetry run alembic -c app/db/alembic.ini
+ALEMBIC = poetry run alembic
 
 MSG ?=
 REV ?=head
