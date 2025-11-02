@@ -13,7 +13,7 @@ from app.schemas import (
     VisitSearchRequest,
 )
 from app.utils.doctor import create_new_doctor, find_doctor_by_substr, get_doctor_by_id, update_doctor
-from app.utils.visit import get_visits_by_filter
+from app.utils.visit import svc_get_visits_by_filter
 
 router = APIRouter(prefix="/doctors", tags=["doctor"])
 
@@ -101,5 +101,5 @@ async def get_visits(
         session: AsyncSession = Depends(get_session),
 ):
     search = VisitSearchRequest(doctor_id=doctor_id)
-    visits = await get_visits_by_filter(session, search)
+    visits = await svc_get_visits_by_filter(session, search)
     return visits

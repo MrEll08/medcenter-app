@@ -14,7 +14,7 @@ from app.schemas import (
     VisitSearchRequest,
 )
 from app.utils.client import create_new_client, find_client_by_substr, get_client_by_id, update_client
-from app.utils.visit import get_visits_by_filter
+from app.utils.visit import svc_get_visits_by_filter
 
 router = APIRouter(prefix="/clients", tags=["client"])
 
@@ -108,5 +108,5 @@ async def get_visits(
         session: AsyncSession = Depends(get_session),
 ):
     search = VisitSearchRequest(client_id=client_id)
-    visits = await get_visits_by_filter(session, search)
+    visits = await svc_get_visits_by_filter(session, search)
     return visits

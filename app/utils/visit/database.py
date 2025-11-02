@@ -1,6 +1,7 @@
 import uuid
+from typing import Any
 
-from sqlalchemy import Date, Sequence, Time, asc, cast, desc, select, update
+from sqlalchemy import Date, Sequence, Time, asc, cast, desc, select, update, Select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.models import Visit
@@ -57,27 +58,51 @@ async def delete_visit_by_id(
     await session.commit()
 
 
-async def get_visits_by_filter(
+async def dal_get_visits_by_filter(
         session: AsyncSession,
-        search_visit: VisitSearchRequest
+        search: VisitSearchRequest,
+        limit: int = 10,
+        offset: int = 0,
 ) -> Sequence[Visit]:
-    query = select(Visit).order_by(
+    visits = await session.scalars(
+        _search_stmt(search, select(Visit))
+        .limit(limit).offset(offset)
+    )
+    return visits
+
+
+async def dal_count_visits_by_filter(
+        session: AsyncSession,
+        search: VisitSearchRequest,
+) -> Sequence[Visit]:
+    result = await session.scalar(
+        select(func.count()).select_from(
+            _search_stmt(search, select(Visit)).subquery()
+        )
+    )
+    return result or 0
+
+
+# --- HELPERS ---
+
+def _search_stmt(search: VisitSearchRequest, stmt: Select[Any]) -> Select[Any]:
+    if search.client_id:
+        stmt = stmt.where(Visit.client_id == search.client_id)
+    if search.doctor_id:
+        stmt = stmt.where(Visit.doctor_id == search.doctor_id)
+    if search.start_date:
+        stmt = stmt.where(Visit.start_date >= search.start_date)
+    if search.end_date:
+        stmt = stmt.where(Visit.end_date <= search.end_date)
+    if search.cabinet:
+        stmt = stmt.where(Visit.cabinet == search.cabinet)
+    if search.procedure:
+        stmt = stmt.where(Visit.procedure == search.procedure)
+    if search.status:
+        stmt = stmt.where(Visit.status == search.status)
+
+    stmt = stmt.order_by(
         desc(cast(Visit.start_date, Date)),
         asc(cast(Visit.start_date, Time))
-    ).limit(search_visit.search_limit)
-    if search_visit.client_id:
-        query = query.where(Visit.client_id == search_visit.client_id)
-    if search_visit.doctor_id:
-        query = query.where(Visit.doctor_id == search_visit.doctor_id)
-    if search_visit.start_date:
-        query = query.where(Visit.start_date >= search_visit.start_date)
-    if search_visit.end_date:
-        query = query.where(Visit.end_date <= search_visit.end_date)
-    if search_visit.cabinet:
-        query = query.where(Visit.cabinet == search_visit.cabinet)
-    if search_visit.procedure:
-        query = query.where(Visit.procedure == search_visit.procedure)
-    if search_visit.status:
-        query = query.where(Visit.status == search_visit.status)
-    visits = await session.execute(query)
-    return visits.scalars().all()
+    )
+    return stmt

@@ -1,6 +1,7 @@
 from .client import ClientCreateRequest, ClientResponse, ClientUpdateRequest
 from .doctor import DoctorCreateRequest, DoctorResponse, DoctorUpdateRequest
 from .visit import VisitCreateRequest, VisitResponse, VisitSearchRequest, VisitUpdateRequest
+from .page import PageResponse
 
 __all__ = [
     "ClientCreateRequest",
@@ -15,4 +16,6 @@ __all__ = [
     "VisitCreateRequest",
     "VisitResponse",
     "VisitUpdateRequest",
+
+    "PageResponse",
 ]

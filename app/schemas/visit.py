@@ -37,8 +37,6 @@ class VisitResponse(BaseResponse):
 
 
 class VisitSearchRequest(BaseModel):
-    search_limit: int = 30
-
     client_id: uuid.UUID | None = None
     doctor_id: uuid.UUID | None = None
 
