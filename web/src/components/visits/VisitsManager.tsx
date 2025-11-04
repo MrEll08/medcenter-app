@@ -75,6 +75,8 @@ type VisitFormValues = {
 }
 
 type VisitQueryParams = {
+    limit?: number
+    offset?: number
     search_limit?: number
     client_id?: string
     doctor_id?: string
@@ -83,6 +85,13 @@ type VisitQueryParams = {
     cabinet?: string
     procedure?: string
     status?: VisitStatusEnum
+}
+
+type Page<T> = {
+    total: number
+    limit: number
+    offset: number
+    items: T[]
 }
 
 type ShowColumns = Partial<{
@@ -118,8 +127,8 @@ function combineDateAndTime(date: Dayjs, time: Dayjs): string {
         .toISOString()
 }
 
-async function fetchVisits(params: VisitQueryParams): Promise<VisitResponse[]> {
-    const res = await api.get<VisitResponse[]>('/visits/', {params})
+async function fetchVisits(params: VisitQueryParams): Promise<Page<VisitResponse>> {
+    const res = await api.get<Page<VisitResponse>>('/visits/', {params})
     return res.data
 }
 
@@ -156,6 +165,9 @@ export default function VisitsManager({context, show, defaultLimit = 30}: Props)
     const effDoctorId = context?.doctorId ?? doctorId
     const isDoctorDayMode = isDayMode && !!effDoctorId
 
+    const [page, setPage] = useState<number>(1)
+    const [pageSize, setPageSize] = useState<number>(defaultLimit)
+
     useEffect(() => {
         if (didHydrateFromUrl.current) return
         const sp = new URLSearchParams(location.search)
@@ -165,6 +177,7 @@ export default function VisitsManager({context, show, defaultLimit = 30}: Props)
         const qStatus = sp.get('status') as VisitStatusEnum | null
         const qCab = sp.get('cabinet') || undefined
         const qProc = sp.get('procedure') || undefined
+        const qPage = sp.get('page')
         const qLimit = sp.get('limit')
         const qDay = sp.get('day')
         const qStart = sp.get('start')
@@ -176,6 +189,12 @@ export default function VisitsManager({context, show, defaultLimit = 30}: Props)
         if (qCab) setCabinet(qCab)
         if (qProc) setProcedure(qProc)
         if (qLimit && !Number.isNaN(Number(qLimit))) setLimit(Number(qLimit))
+
+        if (qPage && !Number.isNaN(Number(qPage))) setPage(Math.max(1, Number(qPage)))
+        if (qLimit && !Number.isNaN(Number(qLimit))) {
+            setLimit(Number(qLimit))
+            setPageSize(Number(qLimit))
+        }
 
         if (qDay) {
             const d = dayjs(qDay, 'YYYY-MM-DD', true)
@@ -334,9 +353,11 @@ export default function VisitsManager({context, show, defaultLimit = 30}: Props)
     const params: VisitQueryParams = useMemo(() => {
         const p: VisitQueryParams = {}
         if (isDoctorDayMode) {
-            p.search_limit = 10000
+            p.limit = 10000
+            p.offset = 0
         } else {
-            p.search_limit = limit
+            p.limit = pageSize
+            p.offset = (page - 1) * pageSize
         }
         if (clientId) p.client_id = clientId
         if (doctorId) p.doctor_id = doctorId
@@ -351,18 +372,23 @@ export default function VisitsManager({context, show, defaultLimit = 30}: Props)
             p.end_date = range[1].toISOString()
         }
         return p
-    }, [isDoctorDayMode, clientId, doctorId, status, cabinet, procedure, day, range, limit])
+    }, [isDoctorDayMode, clientId, doctorId, status, cabinet, procedure, day, range, pageSize, page])
 
-    const {data, isLoading} = useQuery<VisitResponse[]>({
+    const {data, isLoading} = useQuery<Page<VisitResponse>>({
         queryKey: ['visits', params],
         queryFn: () => fetchVisits(params),
     })
 
     const tableData: RowData[] = useMemo(() => {
-        if (!isDayMode) return (data || []) as RowData[]
+        const items = data?.items ?? []
+        if (!isDayMode) return items as RowData[]
         if (!day) return []
-        return buildDayRows(day, data || [], MIN_TIME, MAX_TIME)
+        return buildDayRows(day, items, MIN_TIME, MAX_TIME)
     }, [isDayMode, data, day, buildDayRows, MIN_TIME, MAX_TIME])
+
+    useEffect(() => {
+        setPage(1)
+    }, [clientId, doctorId, status, cabinet, procedure, day, range])
 
     useEffect(() => {
         if (!didHydrateFromUrl.current) return
@@ -375,6 +401,8 @@ export default function VisitsManager({context, show, defaultLimit = 30}: Props)
         if (cabinet) sp.set('cabinet', cabinet)
         if (procedure) sp.set('procedure', procedure)
         if (limit !== defaultLimit) sp.set('limit', String(limit))
+        if (page !== 1) sp.set('page', String(page))
+        if (pageSize !== defaultLimit) sp.set('limit', String(pageSize))
 
         if (day) {
             sp.set('day', day.format('YYYY-MM-DD'))
@@ -385,13 +413,13 @@ export default function VisitsManager({context, show, defaultLimit = 30}: Props)
 
         const search = sp.toString()
         navigate({search: search ? `?${search}` : ''}, {replace: true})
-    }, [clientId, doctorId, status, cabinet, procedure, day, range, limit, defaultLimit, navigate, context?.clientId, context?.doctorId])
+    }, [clientId, doctorId, status, cabinet, procedure, day, range, limit, defaultLimit, navigate, context?.clientId, context?.doctorId, page, pageSize])
 
     useEffect(() => {
         if (!printOpen || !data) return
 
-        const uniqueClients = Array.from(new Set(data.map(v => v.client_id)))
-        const uniqueDoctors = Array.from(new Set(data.map(v => v.doctor_id)))
+        const uniqueClients = Array.from(new Set(data.items.map(v => v.client_id)))
+        const uniqueDoctors = Array.from(new Set(data.items.map(v => v.doctor_id)))
 
         ;(async () => {
             try {
@@ -502,7 +530,7 @@ export default function VisitsManager({context, show, defaultLimit = 30}: Props)
             render: (iso: string, row: VisitResponse | GapRow) =>
                 isGap(row)
                     ? {children: null, props: {colSpan: 0}}
-                    : dayjs(iso).format('YYYY-MM-DD'),
+                    : dayjs(iso).format('DD.MM.YYYY'),
         })
     }
     columns.push({
@@ -887,6 +915,7 @@ export default function VisitsManager({context, show, defaultLimit = 30}: Props)
                 )}*/}
                 <DatePicker
                     placeholder="День"
+                    format="DD.MM.YYYY"
                     value={day ?? undefined}
                     onChange={(d) => {
                         setDay(d ?? null)
@@ -894,6 +923,7 @@ export default function VisitsManager({context, show, defaultLimit = 30}: Props)
                     }}
                 />
                 <RangePicker
+                    format="DD.MM.YYYY"
                     value={range ?? undefined}
                     onChange={(v) => {
                         if (v && v[0] && v[1]) {
@@ -910,10 +940,14 @@ export default function VisitsManager({context, show, defaultLimit = 30}: Props)
                     <InputNumber
                         min={1}
                         max={500}
-                        value={limit}
-                        onChange={(v) => setLimit(typeof v === 'number' ? v : defaultLimit)}
+                        value={pageSize}
+                        onChange={(v) => {
+                            const ps = typeof v === 'number' ? v : defaultLimit
+                            setPageSize(ps)
+                            setLimit(ps)
+                            setPage(1)
+                        }}
                         placeholder="Лимит"
-                        disabled={isDoctorDayMode}
                     />
                 )}
                 <Button
@@ -930,7 +964,29 @@ export default function VisitsManager({context, show, defaultLimit = 30}: Props)
                 loading={isLoading}
                 dataSource={tableData}
                 columns={columns}
-                pagination={isDoctorDayMode ? false : undefined}
+                pagination={
+                    isDoctorDayMode
+                        ? false
+                        : {
+                            current: page,
+                            pageSize: pageSize,
+                            total: data?.total ?? 0,
+                            showSizeChanger: true,
+                            pageSizeOptions: [1, 10, 20, 30, 50, 100],
+                            locale: {
+                                items_per_page: 'на странице',
+                                jump_to: 'Перейти к',
+                                page: 'стр.',
+                                jump_to_confirm: 'ОК',
+                                prev_page: 'Предыдущая страница',
+                                next_page: 'Следующая страница',
+                            },
+                            onChange: (p, ps) => {
+                                setPage(p)
+                                setPageSize(ps)
+                            },
+                        }
+                }
             />
 
             <Modal
@@ -960,7 +1016,7 @@ export default function VisitsManager({context, show, defaultLimit = 30}: Props)
                     )}
 
                     <Form.Item name="date" label="Дата" rules={[{required: !editing, message: 'Укажите дату'}]}>
-                        <DatePicker style={{width: '100%'}}/>
+                        <DatePicker format="DD.MM.YYYY" style={{width: '100%'}}/>
                     </Form.Item>
 
                     <Space size="large" wrap>
@@ -1050,7 +1106,7 @@ export default function VisitsManager({context, show, defaultLimit = 30}: Props)
                     subtitle={printSubtitle}
                     note={printNote}
                     columns={printCols}
-                    data={data ?? []}
+                    data={data?.items ?? []}
                     clientsMap={clientsMap}
                     doctorsMap={doctorsMap}
                 />

@@ -276,6 +276,17 @@ export interface components {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
         };
+        /** PageResponse[VisitResponse] */
+        PageResponse_VisitResponse_: {
+            /** Total */
+            total: number;
+            /** Limit */
+            limit: number;
+            /** Offset */
+            offset: number;
+            /** Items */
+            items: components["schemas"]["VisitResponse"][];
+        };
         /** ValidationError */
         ValidationError: {
             /** Location */
@@ -759,7 +770,8 @@ export interface operations {
     get_visits_api_v1_visits__get: {
         parameters: {
             query?: {
-                search_limit?: number;
+                limit?: number;
+                offset?: number;
                 client_id?: string | null;
                 doctor_id?: string | null;
                 start_date?: string | null;
@@ -780,7 +792,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["VisitResponse"][];
+                    "application/json": components["schemas"]["PageResponse_VisitResponse_"];
                 };
             };
             /** @description Validation Error */
