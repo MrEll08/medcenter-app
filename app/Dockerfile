@@ -12,6 +12,7 @@ COPY pyproject.toml poetry.lock* ./
 RUN poetry install --no-root
 
 COPY ./app ./app
+COPY ../alembic.ini /app
 
 EXPOSE 8000
 CMD ["poetry", "run", "python", "-m", "app"]

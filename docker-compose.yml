@@ -17,6 +17,7 @@ services:
     restart: unless-stopped
 
   migrate:
+    container_name: "migrate_db"
     build:
       context: .
       dockerfile: ./app/Dockerfile
@@ -29,7 +30,7 @@ services:
       db:
         condition: service_healthy
     command: >
-      sh -c 'poetry run alembic -c app/db/alembic.ini upgrade head'
+      sh -c 'poetry run alembic upgrade head'
     restart: "no"
 
   api:
