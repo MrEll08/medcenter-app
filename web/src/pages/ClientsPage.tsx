@@ -73,12 +73,12 @@ export default function ClientsPage() {
                 toCreate={(v) => ({
                     full_name: v.full_name!,
                     phone_number: v.phone_number!,
-                    date_of_birth: v.date_of_birth!.format('YYYY-MM-DD'),
+                    date_of_birth: v.date_of_birth!.format('DD.MM.YYYY'),
                 })}
                 toUpdate={(v) => ({
                     full_name: v.full_name,
                     phone_number: v.phone_number,
-                    date_of_birth: v.date_of_birth ? v.date_of_birth.format('YYYY-MM-DD') : undefined,
+                    date_of_birth: v.date_of_birth ? v.date_of_birth.format('DD.MM.YYYY') : undefined,
                 })}
             />
         </div>

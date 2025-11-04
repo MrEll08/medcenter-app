@@ -197,7 +197,7 @@ export default function VisitsManager({context, show, defaultLimit = 30}: Props)
         }
 
         if (qDay) {
-            const d = dayjs(qDay, 'YYYY-MM-DD', true)
+            const d = dayjs(qDay, 'DD.MM.YYYY', true)
             if (d.isValid()) {
                 setDay(d)
                 setRange(null)
@@ -405,7 +405,7 @@ export default function VisitsManager({context, show, defaultLimit = 30}: Props)
         if (pageSize !== defaultLimit) sp.set('limit', String(pageSize))
 
         if (day) {
-            sp.set('day', day.format('YYYY-MM-DD'))
+            sp.set('day', day.format('DD.MM.YYYY'))
         } else if (range) {
             sp.set('start', range[0].toISOString())
             sp.set('end', range[1].toISOString())
@@ -445,7 +445,7 @@ export default function VisitsManager({context, show, defaultLimit = 30}: Props)
             context?.clientId ? (() => {
                 const c = clientsMap[context.clientId!]
                 if (!c) return ''
-                const dob = c.date_of_birth ? dayjs(c.date_of_birth).format('YYYY-MM-DD') : undefined
+                const dob = c.date_of_birth ? dayjs(c.date_of_birth).format('DD.MM.YYYY') : undefined
                 const age = c.date_of_birth ? (() => {
                     const birth = dayjs(c.date_of_birth)
                     const a = dayjs().diff(birth, 'year')
@@ -456,8 +456,8 @@ export default function VisitsManager({context, show, defaultLimit = 30}: Props)
 
     const printNote = (() => {
         const parts: string[] = []
-        if (day) parts.push(`День: ${day.format('YYYY-MM-DD')}`)
-        else if (range) parts.push(`Период: ${range[0].format('YYYY-MM-DD HH:mm')} – ${range[1].format('YYYY-MM-DD HH:mm')}`)
+        if (day) parts.push(`День: ${day.format('DD.MM.YYYY')}`)
+        else if (range) parts.push(`Период: ${range[0].format('DD.MM.YYYY HH:mm')} – ${range[1].format('DD.MM.YYYY HH:mm')}`)
         if (status) parts.push(`Статус: ${status}`)
         if (cabinet) parts.push(`Кабинет: ${cabinet}`)
         if (procedure) parts.push(`Услуга: ${procedure}`)

@@ -104,7 +104,7 @@ export default function VisitDetailPage() {
         })
     }, [visit, form])
 
-    const headerDate = useMemo(() => visit ? dayjs(visit.start_date).format('YYYY-MM-DD') : '', [visit])
+    const headerDate = useMemo(() => visit ? dayjs(visit.start_date).format('DD.MM.YYYY') : '', [visit])
 
     const onSave = async () => {
         const v = await form.validateFields()
@@ -196,7 +196,7 @@ export default function VisitDetailPage() {
                         </div>
                     </Col>
                     <Col xs={24} md={8}>
-                        <div><b>Дата:</b> {dayjs(visit.start_date).format('YYYY-MM-DD')}</div>
+                        <div><b>Дата:</b> {dayjs(visit.start_date).format('DD.MM.YYYY')}</div>
                     </Col>
                     <Col xs={24} md={8}>
                         <div><b>Начало:</b> {dayjs(visit.start_date).format('HH:mm')}</div>

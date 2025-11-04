@@ -50,7 +50,7 @@ function cell(
     doctorsMap?: Record<string, DoctorExtra>
 ): string {
     switch (col) {
-        case 'date': return dayjs(v.start_date).format('YYYY-MM-DD')
+        case 'date': return dayjs(v.start_date).format('DD.MM.YYYY')
         case 'time': return `${dayjs(v.start_date).format('HH:mm')}–${dayjs(v.end_date).format('HH:mm')}`
         case 'client': return clientCell(v, clientsMap?.[v.client_id])
         case 'doctor': return doctorCell(v, doctorsMap?.[v.doctor_id])
