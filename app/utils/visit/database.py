@@ -83,6 +83,18 @@ async def dal_count_visits_by_filter(
     return result or 0
 
 
+async def dal_total_visits_cost_by_filter(
+        session: AsyncSession,
+        search: VisitSearchRequest,
+) -> int:
+    result = await session.scalar(
+        select(func.sum(Visit.cost)).select_from(
+            _search_stmt(search, select(Visit)).subquery()
+        )
+    )
+    return result or 0
+
+
 # --- HELPERS ---
 
 def _search_stmt(search: VisitSearchRequest, stmt: Select[Any]) -> Select[Any]:
