@@ -967,7 +967,7 @@ export default function VisitsManager({context, show, defaultLimit = 30, onTotal
 
                 <Space size="small" align="center">
                     <Typography.Text type="secondary">
-                        Суммарная стоимость приёмов:
+                        Суммарная стоимость найденных приёмов:
                     </Typography.Text>
                     <Typography.Text strong>{totalCostDisplay}</Typography.Text>
                 </Space>
