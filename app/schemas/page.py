@@ -15,4 +15,4 @@ class PageResponse(BaseModel, Generic[T]):
 
 
 class PageVisitResponse(PageResponse[VisitResponse]):
-    total_cost: int = 0
+    total_cost: float = 0
