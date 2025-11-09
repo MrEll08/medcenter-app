@@ -86,13 +86,17 @@ async def dal_count_visits_by_filter(
 async def dal_total_visits_cost_by_filter(
         session: AsyncSession,
         search: VisitSearchRequest,
-) -> int:
+) -> float:
+    filtered_costs = _search_stmt(
+        search,
+        select(Visit.cost.label("cost")),
+    ).subquery()
+
     result = await session.scalar(
-        select(func.sum(Visit.cost)).select_from(
-            _search_stmt(search, select(Visit)).subquery()
-        )
+        select(func.coalesce(func.sum(filtered_costs.c.cost), 0))
     )
-    return result or 0
+
+    return float(result)
 
 
 # --- HELPERS ---

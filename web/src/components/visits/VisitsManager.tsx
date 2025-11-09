@@ -12,13 +12,15 @@ import {
     message,
     Popconfirm,
     Tooltip,
-    Dropdown
+    Dropdown,
+    Typography
 } from 'antd'
 import type {ColumnsType} from 'antd/es/table'
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query'
 import dayjs, {Dayjs} from 'dayjs'
 import {api} from '../../lib/api'
 import type {VisitCreateRequest, VisitResponse, VisitStatusEnum, VisitUpdateRequest} from '../../api'
+import {fetchVisits, type VisitPageResponse, type VisitQueryParams} from '../../api/visits'
 import {getErrorMessage} from '../../lib/errors'
 import EntitySelect from '../EntitySelect'
 import {Info, Pencil, Trash2} from 'lucide-react'
@@ -74,26 +76,6 @@ type VisitFormValues = {
     cost?: number
 }
 
-type VisitQueryParams = {
-    limit?: number
-    offset?: number
-    search_limit?: number
-    client_id?: string
-    doctor_id?: string
-    start_date?: string
-    end_date?: string
-    cabinet?: string
-    procedure?: string
-    status?: VisitStatusEnum
-}
-
-type Page<T> = {
-    total: number
-    limit: number
-    offset: number
-    items: T[]
-}
-
 type ShowColumns = Partial<{
     date: boolean
     startTime: boolean
@@ -116,6 +98,7 @@ type Props = {
     context?: Context
     show?: ShowColumns
     defaultLimit?: number
+    onTotalsChange?: () => void
 }
 
 function combineDateAndTime(date: Dayjs, time: Dayjs): string {
@@ -127,9 +110,13 @@ function combineDateAndTime(date: Dayjs, time: Dayjs): string {
         .toISOString()
 }
 
-async function fetchVisits(params: VisitQueryParams): Promise<Page<VisitResponse>> {
-    const res = await api.get<Page<VisitResponse>>('/visits/', {params})
-    return res.data
+const currencyFormatter = new Intl.NumberFormat('ru-RU', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+})
+
+function formatCurrency(value: number): string {
+    return currencyFormatter.format(value)
 }
 
 async function createVisit(body: VisitCreateRequest): Promise<VisitResponse> {
@@ -146,11 +133,15 @@ async function deleteVisit(id: string): Promise<void> {
     await api.delete(`/visits/${id}`)
 }
 
-export default function VisitsManager({context, show, defaultLimit = 30}: Props) {
+export default function VisitsManager({context, show, defaultLimit = 30, onTotalsChange}: Props) {
     const qc = useQueryClient()
     const navigate = useNavigate()
     const location = useLocation()
     const didHydrateFromUrl = useRef(false)
+
+    const notifyTotalsChange = useCallback(() => {
+        onTotalsChange?.()
+    }, [onTotalsChange])
 
     // -------- Фильтры списка --------
     const [clientId, setClientId] = useState<string | undefined>(context?.clientId)
@@ -331,6 +322,7 @@ export default function VisitsManager({context, show, defaultLimit = 30}: Props)
         onSuccess: () => {
             message.success('Сохранено')
             qc.invalidateQueries({queryKey: ['visits']})
+            notifyTotalsChange()
             cancelEdit()
         },
         onError: (err: unknown) => message.error(getErrorMessage(err)),
@@ -374,7 +366,7 @@ export default function VisitsManager({context, show, defaultLimit = 30}: Props)
         return p
     }, [isDoctorDayMode, clientId, doctorId, status, cabinet, procedure, day, range, pageSize, page])
 
-    const {data, isLoading} = useQuery<Page<VisitResponse>>({
+    const {data, isLoading} = useQuery<VisitPageResponse>({
         queryKey: ['visits', params],
         queryFn: () => fetchVisits(params),
     })
@@ -385,6 +377,11 @@ export default function VisitsManager({context, show, defaultLimit = 30}: Props)
         if (!day) return []
         return buildDayRows(day, items, MIN_TIME, MAX_TIME)
     }, [isDayMode, data, day, buildDayRows, MIN_TIME, MAX_TIME])
+
+    const totalCostValue = data?.total_cost ?? 0
+    const totalCostDisplay = isLoading && !data
+        ? 'Загрузка…'
+        : `${formatCurrency(totalCostValue)} ₽`
 
     useEffect(() => {
         setPage(1)
@@ -482,6 +479,7 @@ export default function VisitsManager({context, show, defaultLimit = 30}: Props)
         onSuccess: () => {
             message.success('Приём добавлен')
             qc.invalidateQueries({queryKey: ['visits']})
+            notifyTotalsChange()
             setOpen(false)
             form.resetFields()
         },
@@ -493,6 +491,7 @@ export default function VisitsManager({context, show, defaultLimit = 30}: Props)
         onSuccess: () => {
             message.success('Сохранено')
             qc.invalidateQueries({queryKey: ['visits']})
+            notifyTotalsChange()
             setOpen(false)
             setEditing(null)
             form.resetFields()
@@ -505,6 +504,7 @@ export default function VisitsManager({context, show, defaultLimit = 30}: Props)
         onSuccess: () => {
             message.success('Удалено')
             qc.invalidateQueries({queryKey: ['visits']})
+            notifyTotalsChange()
         },
         onError: (err: unknown) => message.error(getErrorMessage(err)),
     })
@@ -515,6 +515,7 @@ export default function VisitsManager({context, show, defaultLimit = 30}: Props)
         onSuccess: () => {
             message.success('Статус обновлён')
             qc.invalidateQueries({queryKey: ['visits']})
+            notifyTotalsChange()
         },
         onError: (err: unknown) => message.error(getErrorMessage(err)),
     })
@@ -868,95 +869,108 @@ export default function VisitsManager({context, show, defaultLimit = 30}: Props)
     return (
         <div>
             {/* Фильтры */}
-            <Space wrap style={{marginBottom: 16}}>
-                <Button
-                    type="primary"
-                    onClick={() => {
-                        setEditing(null)
-                        setOpen(true)
-                        form.resetFields()
-                        form.setFieldsValue({
-                            client_id: context?.clientId,
-                            doctor_id: context?.doctorId,
-                            date: day ?? undefined,
-                            duration: 10,
-                        })
-                    }}
-                >
-                    Новый приём
-                </Button>
-                <Button onClick={resetFilters} danger ghost>
-                    Сбросить
-                </Button>
-
-                {!context?.clientId && (
-                    <EntitySelect entity="clients" value={clientId} onChange={setClientId} placeholder="Пациент"
-                                  allowClear/>
-                )}
-                {!context?.doctorId && (
-                    <EntitySelect entity="doctors" value={doctorId} onChange={setDoctorId} placeholder="Врач"
-                                  allowClear/>
-                )}
-                <Select
-                    allowClear
-                    placeholder="Статус"
-                    value={status}
-                    onChange={setStatus}
-                    style={{width: 170}}
-                    options={STATUS.map(s => ({value: s, label: `${STATUS_META[s].emoji} ${STATUS_META[s].label}`}))}
-                />
-                {show?.cabinet !== false && (
-                    <Input placeholder="Кабинет" value={cabinet}
-                           onChange={(e) => setCabinet(e.target.value || undefined)}/>
-                )}
-                {/*{show?.procedure !== false && (
-                    <Input placeholder="Услуга" value={procedure}
-                           onChange={(e) => setProcedure(e.target.value || undefined)}/>
-                )}*/}
-                <DatePicker
-                    placeholder="День"
-                    format="DD.MM.YYYY"
-                    value={day ?? undefined}
-                    onChange={(d) => {
-                        setDay(d ?? null)
-                        if (d) setRange(null)
-                    }}
-                />
-                <RangePicker
-                    format="DD.MM.YYYY"
-                    value={range ?? undefined}
-                    onChange={(v) => {
-                        if (v && v[0] && v[1]) {
-                            const start = v[0].startOf('day')
-                            const end = v[1].endOf('day')   // включительно до конца дня
-                            setRange([start, end])
-                            setDay(null)
-                        } else {
-                            setRange(null)
-                        }
-                    }}
-                />
-                {!isDoctorDayMode && (
-                    <InputNumber
-                        min={1}
-                        max={500}
-                        value={pageSize}
-                        onChange={(v) => {
-                            const ps = typeof v === 'number' ? v : defaultLimit
-                            setPageSize(ps)
-                            setLimit(ps)
-                            setPage(1)
+            <Space
+                direction="vertical"
+                size="small"
+                style={{width: '100%', marginBottom: 16}}
+            >
+                <Space wrap>
+                    <Button
+                        type="primary"
+                        onClick={() => {
+                            setEditing(null)
+                            setOpen(true)
+                            form.resetFields()
+                            form.setFieldsValue({
+                                client_id: context?.clientId,
+                                doctor_id: context?.doctorId,
+                                date: day ?? undefined,
+                                duration: 10,
+                            })
                         }}
-                        placeholder="Лимит"
+                    >
+                        Новый приём
+                    </Button>
+                    <Button onClick={resetFilters} danger ghost>
+                        Сбросить
+                    </Button>
+
+                    {!context?.clientId && (
+                        <EntitySelect entity="clients" value={clientId} onChange={setClientId}
+                                      placeholder="Пациент" allowClear/>
+                    )}
+                    {!context?.doctorId && (
+                        <EntitySelect entity="doctors" value={doctorId} onChange={setDoctorId}
+                                      placeholder="Врач" allowClear/>
+                    )}
+                    <Select
+                        allowClear
+                        placeholder="Статус"
+                        value={status}
+                        onChange={setStatus}
+                        style={{width: 170}}
+                        options={STATUS.map(s => ({value: s, label: `${STATUS_META[s].emoji} ${STATUS_META[s].label}`}))}
                     />
-                )}
-                <Button
-                    onClick={() => setPrintOpen(true)}
-                    className="p-1 rounded-lg hover:bg-gray-100"
-                    title="Печать / PDF"
-                >
-                    <Printer size={16} className="text-blue-600"/>
-                </Button>
+                    {show?.cabinet !== false && (
+                        <Input placeholder="Кабинет" value={cabinet}
+                               onChange={(e) => setCabinet(e.target.value || undefined)}/>
+                    )}
+                    {/*{show?.procedure !== false && (
+                        <Input placeholder="Услуга" value={procedure}
+                               onChange={(e) => setProcedure(e.target.value || undefined)}/>
+                    )}*/}
+                    <DatePicker
+                        placeholder="День"
+                        format="DD.MM.YYYY"
+                        value={day ?? undefined}
+                        onChange={(d) => {
+                            setDay(d ?? null)
+                            if (d) setRange(null)
+                        }}
+                    />
+                    <RangePicker
+                        format="DD.MM.YYYY"
+                        value={range ?? undefined}
+                        onChange={(v) => {
+                            if (v && v[0] && v[1]) {
+                                const start = v[0].startOf('day')
+                                const end = v[1].endOf('day')   // включительно до конца дня
+                                setRange([start, end])
+                                setDay(null)
+                            } else {
+                                setRange(null)
+                            }
+                        }}
+                    />
+                    {!isDoctorDayMode && (
+                        <InputNumber
+                            min={1}
+                            max={500}
+                            value={pageSize}
+                            onChange={(v) => {
+                                const ps = typeof v === 'number' ? v : defaultLimit
+                                setPageSize(ps)
+                                setLimit(ps)
+                                setPage(1)
+                            }}
+                            placeholder="Лимит"
+                        />
+                    )}
+                    <Button
+                        onClick={() => setPrintOpen(true)}
+                        className="p-1 rounded-lg hover:bg-gray-100"
+                        title="Печать / PDF"
+                    >
+                        <Printer size={16} className="text-blue-600"/>
+                    </Button>
+                </Space>
+
+                <Space size="small" align="center">
+                    <Typography.Text type="secondary">
+                        Суммарная стоимость приёмов:
+                    </Typography.Text>
+                    <Typography.Text strong>{totalCostDisplay}</Typography.Text>
+                </Space>
             </Space>
 
             <Table<VisitResponse | GapRow>
