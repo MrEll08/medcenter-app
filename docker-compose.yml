@@ -50,8 +50,8 @@ services:
         condition: service_healthy
       migrate:
         condition: service_completed_successfully
-    ports:
-      - "127.0.0.1:${API_PORT}:8000"
+    expose:
+      - "8000"
     restart: unless-stopped
     volumes:
       - ./app:/app/app:cached
@@ -73,12 +73,24 @@ services:
       CHOKIDAR_USEPOLLING: "true"
     depends_on:
       - api
-    ports:
-      - "0.0.0.0:${APP_PORT}:5173"
+    expose:
+      - "5173"
     volumes:
       - ./web:/app/web:cached
       - web_node_modules:/app/web/node_modules
       - /app/web/.vite
+
+  nginx:
+    container_name: medcenter_nginx
+    image: nginx:alpine
+    depends_on:
+      - web
+    ports:
+      - "5173:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/.htpasswd:/etc/nginx/.htpasswd:ro
+    restart: unless-stopped
 
 volumes:
   pg_data:
