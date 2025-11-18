@@ -5,7 +5,7 @@ services:
     env_file:
       - ./.env
     ports:
-      - '${POSTGRES_PORT}:5432'
+      - '127.0.0.1:${POSTGRES_PORT}:5432'
     volumes:
       - pg_data:/var/lib/postgresql/data
     healthcheck:
@@ -51,7 +51,7 @@ services:
       migrate:
         condition: service_completed_successfully
     ports:
-      - "${API_PORT}:8000"
+      - "127.0.0.1:${API_PORT}:8000"
     restart: unless-stopped
     volumes:
       - ./app:/app/app:cached
@@ -74,7 +74,7 @@ services:
     depends_on:
       - api
     ports:
-      - "${APP_PORT}:5173"
+      - "0.0.0.0:${APP_PORT}:5173"
     volumes:
       - ./web:/app/web:cached
       - web_node_modules:/app/web/node_modules
