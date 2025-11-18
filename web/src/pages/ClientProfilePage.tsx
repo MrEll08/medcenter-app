@@ -124,7 +124,7 @@ export default function ClientProfilePage() {
                 </Space>
             </Card>
 
-            <Typography.Title level={4} style={{ marginTop: 0 }}>Посещения</Typography.Title>
+            <Typography.Title level={4} style={{ marginTop: 0 }}>Посещения пациента</Typography.Title>
 
             <VisitsManager
                 context={{ clientId: id }}

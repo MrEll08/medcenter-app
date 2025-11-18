@@ -331,10 +331,10 @@ export default function VisitsManager({context, show, defaultLimit = 30, onTotal
     const [printOpen, setPrintOpen] = useState(false)
     const [printCols, setPrintCols] = useState<PrintColumnKey[]>(
         context?.doctorId
-            ? ['time', 'client', 'cabinet', 'procedure']      // дефолт для врача
+            ? ['time', 'client', 'procedure', 'cost']      // дефолт для врача
             : context?.clientId
-                ? ['date', 'time', 'doctor', 'cabinet', 'procedure'] // дефолт для пациента
-                : ['date', 'time', 'client', 'doctor', 'cabinet', 'procedure', 'status', 'cost'] // общий
+                ? ['date', 'time', 'doctor', 'procedure'] // дефолт для пациента
+                : ['date', 'time', 'client', 'doctor', 'procedure', 'status', 'cost'] // общий
     )
 
     const [clientsMap, setClientsMap] = useState<Record<string, ClientMini>>({})

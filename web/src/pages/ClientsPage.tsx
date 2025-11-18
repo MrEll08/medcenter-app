@@ -60,7 +60,7 @@ export default function ClientsPage() {
                         <Form.Item name="phone_number" label="Телефон" rules={[{ required: true, message: 'Укажите телефон' }]}>
                             <Input />
                         </Form.Item>
-                        <Form.Item name="date_of_birth" label="Дата рождения" rules={[{ required: false, message: 'Укажите дату рождения' }]}>
+                        <Form.Item name="date_of_birth" label="Дата рождения" rules={[{ required: true, message: 'Укажите дату рождения' }]}>
                             <DatePicker style={{ width: '100%' }} format={"DD.MM.YYYY"} />
                         </Form.Item>
                     </>
