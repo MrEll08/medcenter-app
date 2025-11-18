@@ -20,6 +20,7 @@ export default defineConfig(({mode}) => {
                     changeOrigin: true,
                 },
             },
+            allowedHosts: ["alapaevsk-pc2"],
         },
     }
 })
