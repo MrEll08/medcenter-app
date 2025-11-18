@@ -35,7 +35,12 @@ const columns: ColumnsType<ClientResponse> = [
         ),
     },
     { title: 'Телефон', dataIndex: 'phone_number' },
-    { title: 'Дата рождения', dataIndex: 'date_of_birth' },
+    {
+        title: 'Дата рождения',
+        dataIndex: 'date_of_birth',
+        render: (value: string | null) =>
+            value ? dayjs(value).format('DD.MM.YYYY') : '',
+    },
 ]
 
 export default function ClientsPage() {
