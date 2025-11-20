@@ -34,10 +34,24 @@ export function formatPhoneNumber(value?: string | null): string {
 }
 
 export function formatPhoneInput(value?: string | null): string {
-    const normalized = ensureSevenPrefix(cleanDigits(value ?? '')).slice(0, 11)
-    const digitsWithoutPrefix = normalized.slice(1)
+    const digits = cleanDigits(value ?? '')
+    if (!digits) return ''
 
-    return applyPhoneMask(digitsWithoutPrefix)
+    const normalized = ensureSevenPrefix(digits).slice(0, 11)
+
+    let result = '+7'
+    const rest = normalized.slice(1)
+
+    if (rest.length > 0) {
+        result += ' (' + rest.slice(0, 3)
+        if (rest.length >= 3) result += ')'
+    }
+
+    if (rest.length > 3) result += ' ' + rest.slice(3, 6)
+    if (rest.length > 6) result += '-' + rest.slice(6, 8)
+    if (rest.length > 8) result += '-' + rest.slice(8, 10)
+
+    return result
 }
 
 export function normalizePhoneNumber(value?: string | null): string | undefined {
