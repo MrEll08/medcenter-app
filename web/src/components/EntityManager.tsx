@@ -1,5 +1,6 @@
 // src/components/EntityManager.tsx
-import { ReactNode, useEffect, useMemo, useState } from 'react'
+import type { ReactNode } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Button, Form, Input, Modal, Space, Table, message } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -32,6 +33,7 @@ type EntityManagerProps<
     toUpdate: (v: TFormValues) => TUpdate
     searchPlaceholder?: string
     createButtonText?: string
+    initialValues?: RecursivePartial<TFormValues>
 };
 
 export default function EntityManager<
@@ -42,7 +44,7 @@ export default function EntityManager<
 >(props: EntityManagerProps<TItem, TCreate, TUpdate, TFormValues>) {
     const {
         title, queryKey, fetchList, createItem, updateItem,
-        columns, renderForm, toForm, toCreate, toUpdate,
+        columns, renderForm, toForm, toCreate, toUpdate, initialValues,
         searchPlaceholder = 'Поиск…', createButtonText = 'Создать',
     } = props
 
@@ -93,7 +95,7 @@ export default function EntityManager<
                 <Button onClick={() => {
                     setEditing(row); setOpen(true)
                     // setFieldsValue ожидает RecursivePartial<TFormValues>
-                    form.setFieldsValue(toForm(row))
+                    form.setFieldsValue(toForm(row) as Partial<TFormValues>)
                 }}>
                     <Pencil size={16} className="text-blue-600" />
                 </Button>
@@ -119,7 +121,15 @@ export default function EntityManager<
                     onChange={(e) => setSearch(e.target.value)}
                     allowClear
                 />
-                <Button type="primary" onClick={() => { setEditing(null); setOpen(true); form.resetFields() }}>
+                <Button
+                    type="primary"
+                    onClick={() => {
+                        setEditing(null)
+                        setOpen(true)
+                        form.resetFields()
+                        if (initialValues) form.setFieldsValue(initialValues as Partial<TFormValues>)
+                    }}
+                >
                     {createButtonText}
                 </Button>
             </Space>
@@ -135,7 +145,7 @@ export default function EntityManager<
                 cancelText="Отмена"
                 confirmLoading={createMut.isPending || updateMut.isPending}
             >
-                <Form form={form} layout="vertical">
+                <Form form={form} layout="vertical" initialValues={initialValues}>
                     {renderForm(form, editing)}
                 </Form>
             </Modal>

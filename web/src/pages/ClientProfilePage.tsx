@@ -7,6 +7,7 @@ import type { ClientResponse, VisitStatusEnum } from '../api'
 import { Button, Card, Col, Row, Select, Skeleton, Space, Typography } from 'antd'
 import { fetchVisits, type VisitQueryParams } from '../api/visits'
 import VisitsManager from '../components/visits/VisitsManager'
+import { formatPhoneNumber } from '../lib/phone'
 
 async function fetchClient(id: string): Promise<ClientResponse> {
     const res = await api.get<ClientResponse>(`/clients/${id}`)
@@ -85,7 +86,7 @@ export default function ClientProfilePage() {
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
             <Row gutter={[16, 16]} align="middle" style={{ marginBottom: 12 }}>
                 <Col flex="none">
-                    <Button onClick={() => navigate('/clients')}>← К списку</Button>
+                    <Button onClick={() => navigate(-1)}>← Назад</Button>
                 </Col>
                 <Col flex="auto">
                     <Typography.Title level={3} style={{ margin: 0 }}>
@@ -100,8 +101,10 @@ export default function ClientProfilePage() {
                 ) : (
                     <Row gutter={[16, 8]}>
                         <Col xs={24} md={8}><b>ФИО:</b> {client?.full_name}</Col>
-                        <Col xs={24} md={8}><b>Телефон:</b> {client?.phone_number}</Col>
-                        <Col xs={24} md={8}><b>Дата рождения:</b> {client?.date_of_birth}</Col>
+                        <Col xs={24} md={8}><b>Телефон:</b> {formatPhoneNumber(client?.phone_number)}</Col>
+                        <Col xs={24} md={8}>
+                            <b>Дата рождения:</b> {client?.date_of_birth ? dayjs(client.date_of_birth).format('DD.MM.YYYY') : '—'}
+                        </Col>
                     </Row>
                 )}
             </Card>
