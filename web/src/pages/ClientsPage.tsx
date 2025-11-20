@@ -62,6 +62,7 @@ export default function ClientsPage() {
                 columns={columns}
                 searchPlaceholder="Поиск по ФИО/телефону"
                 createButtonText="Новый пациент"
+                initialValues={{ phone_number: formatPhoneInput('') }}
                 renderForm={() => (
                     <>
                         <Form.Item name="full_name" label="ФИО" rules={[{ required: true, message: 'Укажите ФИО' }]}>
