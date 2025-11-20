@@ -37,6 +37,7 @@ import {PRINT_HEADERS} from './printConsts'
 
 import {useEffect, useRef} from 'react'
 import VisitsPrintSheet from "./VisitsPrintSheet.tsx";
+import { formatPhoneNumber } from '../../lib/phone'
 
 type DoctorMini = { id: string; full_name: string; speciality: string }
 type ClientMini = { id: string; full_name: string; phone_number?: string | null; date_of_birth?: string | null }
@@ -448,7 +449,8 @@ export default function VisitsManager({context, show, defaultLimit = 30, onTotal
                     const a = dayjs().diff(birth, 'year')
                     return `${a} лет`
                 })() : undefined
-                return [c.phone_number || undefined, dob && `рожд. ${dob}`, age].filter(Boolean).join(' · ')
+                const phone = formatPhoneNumber(c.phone_number)
+                return [phone || undefined, dob && `рожд. ${dob}`, age].filter(Boolean).join(' · ')
             })() : ''
 
     const printNote = (() => {
@@ -580,7 +582,7 @@ export default function VisitsManager({context, show, defaultLimit = 30, onTotal
                         <EntityLink kind="clients" id={v.client_id} label={v.client_name}/>
                         {v.client_phone_number && (
                             <span style={{color: '#8c8c8c', fontSize: 12}}>
-                                {v.client_phone_number}
+                                {formatPhoneNumber(v.client_phone_number)}
                             </span>
                         )}
                     </div>

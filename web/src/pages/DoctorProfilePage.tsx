@@ -25,7 +25,7 @@ export default function DoctorProfilePage() {
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
             <Row gutter={[16, 16]} align="middle" style={{ marginBottom: 12 }}>
                 <Col flex="none">
-                    <Button onClick={() => navigate('/doctors')}>← К списку</Button>
+                    <Button onClick={() => navigate(-1)}>← Назад</Button>
                 </Col>
                 <Col flex="auto">
                     <Typography.Title level={3} style={{ margin: 0 }}>

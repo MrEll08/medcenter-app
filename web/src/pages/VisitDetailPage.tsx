@@ -237,7 +237,7 @@ export default function VisitDetailPage() {
 
                     <Col xs={24} md={8}>
                         <Form.Item name="date" label="Дата" rules={[{required: true, message: 'Укажите дату'}]}>
-                            <DatePicker style={{width: '100%'}}/>
+                            <DatePicker style={{width: '100%'}} format="DD.MM.YYYY" />
                         </Form.Item>
                     </Col>
                     <Col xs={24} md={8}>

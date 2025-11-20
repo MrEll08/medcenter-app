@@ -5,6 +5,7 @@ import EntityManager from '../components/EntityManager'
 import EntityLink from '../components/EntityLink'
 import { api } from '../lib/api'
 import type { ClientCreateRequest, ClientResponse, ClientUpdateRequest } from '../api'
+import { formatPhoneNumber, normalizePhoneNumber } from '../lib/phone'
 
 /** UI-форма пациентов: дата — Dayjs|null */
 type ClientForm = {
@@ -34,7 +35,11 @@ const columns: ColumnsType<ClientResponse> = [
             <EntityLink kind="clients" id={row.id} label={row.full_name} />
         ),
     },
-    { title: 'Телефон', dataIndex: 'phone_number' },
+    {
+        title: 'Телефон',
+        dataIndex: 'phone_number',
+        render: (value: string | null) => formatPhoneNumber(value),
+    },
     {
         title: 'Дата рождения',
         dataIndex: 'date_of_birth',
@@ -62,27 +67,32 @@ export default function ClientsPage() {
                         <Form.Item name="full_name" label="ФИО" rules={[{ required: true, message: 'Укажите ФИО' }]}>
                             <Input />
                         </Form.Item>
-                        <Form.Item name="phone_number" label="Телефон" rules={[{ required: true, message: 'Укажите телефон' }]}>
-                            <Input />
+                        <Form.Item
+                            name="phone_number"
+                            label="Телефон"
+                            rules={[{ required: true, message: 'Укажите телефон' }]}
+                            getValueFromEvent={(e) => formatPhoneNumber(e.target.value)}
+                        >
+                            <Input inputMode="tel" placeholder="+7 (___) ___-__-__" />
                         </Form.Item>
                         <Form.Item name="date_of_birth" label="Дата рождения" rules={[{ required: true, message: 'Укажите дату рождения' }]}>
-                            <DatePicker style={{ width: '100%' }} format={"DD.MM.YYYY"} />
+                            <DatePicker style={{ width: '100%' }} format="DD.MM.YYYY" />
                         </Form.Item>
                     </>
                 )}
                 toForm={(item) => ({
                     full_name: item.full_name,
-                    phone_number: item.phone_number,
+                    phone_number: formatPhoneNumber(item.phone_number),
                     date_of_birth: item.date_of_birth ? dayjs(item.date_of_birth) : null,
                 })}
                 toCreate={(v) => ({
                     full_name: v.full_name!,
-                    phone_number: v.phone_number!,
+                    phone_number: normalizePhoneNumber(v.phone_number)!,
                     date_of_birth: v.date_of_birth!.format('YYYY-MM-DD'),
                 })}
                 toUpdate={(v) => ({
                     full_name: v.full_name,
-                    phone_number: v.phone_number,
+                    phone_number: normalizePhoneNumber(v.phone_number),
                     date_of_birth: v.date_of_birth ? v.date_of_birth.format('YYYY-MM-DD') : undefined,
                 })}
             />
