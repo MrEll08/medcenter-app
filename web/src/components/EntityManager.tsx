@@ -1,5 +1,6 @@
 // src/components/EntityManager.tsx
-import { ReactNode, useEffect, useMemo, useState } from 'react'
+import type { ReactNode } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Button, Form, Input, Modal, Space, Table, message } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -93,7 +94,7 @@ export default function EntityManager<
                 <Button onClick={() => {
                     setEditing(row); setOpen(true)
                     // setFieldsValue ожидает RecursivePartial<TFormValues>
-                    form.setFieldsValue(toForm(row))
+                    form.setFieldsValue(toForm(row) as any)
                 }}>
                     <Pencil size={16} className="text-blue-600" />
                 </Button>
