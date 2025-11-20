@@ -5,7 +5,7 @@ import EntityManager from '../components/EntityManager'
 import EntityLink from '../components/EntityLink'
 import { api } from '../lib/api'
 import type { ClientCreateRequest, ClientResponse, ClientUpdateRequest } from '../api'
-import { formatPhoneNumber, normalizePhoneNumber } from '../lib/phone'
+import { formatPhoneInput, formatPhoneNumber, normalizePhoneNumber } from '../lib/phone'
 
 /** UI-форма пациентов: дата — Dayjs|null */
 type ClientForm = {
@@ -71,7 +71,7 @@ export default function ClientsPage() {
                             name="phone_number"
                             label="Телефон"
                             rules={[{ required: true, message: 'Укажите телефон' }]}
-                            getValueFromEvent={(e) => formatPhoneNumber(e.target.value)}
+                            getValueFromEvent={(e) => formatPhoneInput(e.target.value)}
                         >
                             <Input inputMode="tel" placeholder="+7 (___) ___-__-__" />
                         </Form.Item>
@@ -82,7 +82,7 @@ export default function ClientsPage() {
                 )}
                 toForm={(item) => ({
                     full_name: item.full_name,
-                    phone_number: formatPhoneNumber(item.phone_number),
+                    phone_number: formatPhoneInput(item.phone_number),
                     date_of_birth: item.date_of_birth ? dayjs(item.date_of_birth) : null,
                 })}
                 toCreate={(v) => ({
