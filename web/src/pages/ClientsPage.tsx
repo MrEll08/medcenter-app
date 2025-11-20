@@ -76,7 +76,7 @@ export default function ClientsPage() {
                         >
                             <Input inputMode="tel" placeholder="+7 (___) ___-__-__" />
                         </Form.Item>
-                        <Form.Item name="date_of_birth" label="Дата рождения" rules={[{ required: true, message: 'Укажите дату рождения' }]}>
+                        <Form.Item name="date_of_birth" label="Дата рождения">
                             <DatePicker style={{ width: '100%' }} format="DD.MM.YYYY" />
                         </Form.Item>
                     </>
@@ -89,7 +89,7 @@ export default function ClientsPage() {
                 toCreate={(v) => ({
                     full_name: v.full_name!,
                     phone_number: normalizePhoneNumber(v.phone_number)!,
-                    date_of_birth: v.date_of_birth!.format('YYYY-MM-DD'),
+                    date_of_birth: v.date_of_birth ? v.date_of_birth.format('YYYY-MM-DD') : undefined,
                 })}
                 toUpdate={(v) => ({
                     full_name: v.full_name,

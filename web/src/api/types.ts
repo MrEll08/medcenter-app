@@ -167,7 +167,7 @@ export interface components {
              * Date Of Birth
              * Format: date
              */
-            date_of_birth: string;
+            date_of_birth?: string | null;
         };
         /** ClientResponse */
         ClientResponse: {
@@ -200,7 +200,7 @@ export interface components {
              * Date Of Birth
              * Format: date
              */
-            date_of_birth: string;
+            date_of_birth?: string | null;
         };
         /** ClientUpdateRequest */
         ClientUpdateRequest: {
